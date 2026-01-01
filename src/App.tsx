@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router';
-import ImageReviewPage from './components/ImageReviewPage';
-import AnnotationReportPage from './components/ImageReportPage';
+import ImageReviewPage from './components/ReviewPage';
+import AnnotationReportPage from './components/ReportPage';
 import './App.css'
 
 

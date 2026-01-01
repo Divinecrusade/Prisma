@@ -18,11 +18,11 @@ interface ReportData {
   submittedAt: string;
 }
 
-interface ImageReportPageProps {
+interface ReportPageProps {
   uniqueId: string;
 }
 
-const ImageReportPage: React.FC<ImageReportPageProps> = ({ uniqueId }) => {
+const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasHeight, setCanvasHeight] = useState(400);
   const overlayRef = useRef<HTMLDivElement>(null);
@@ -783,4 +783,4 @@ const ImageReportPage: React.FC<ImageReportPageProps> = ({ uniqueId }) => {
   );
 };
 
-export default ImageReportPage;
+export default ReportPage;

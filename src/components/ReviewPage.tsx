@@ -164,7 +164,7 @@ const AnnotationHandler: React.FC<{
   );
 };
 
-const ImageReviewPage: React.FC<ReviewPageProps> = ({
+const ReviewPage: React.FC<ReviewPageProps> = ({
   imageHref,
   uniqueId,
   textContent
@@ -216,4 +216,4 @@ const ImageReviewPage: React.FC<ReviewPageProps> = ({
   );
 };
 
-export default ImageReviewPage;
+export default ReviewPage;
