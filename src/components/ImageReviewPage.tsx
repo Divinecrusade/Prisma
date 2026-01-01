@@ -171,7 +171,7 @@ const ImageReviewPage: React.FC<ReviewPageProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full">
         <div className="bg-white shadow-sm rounded-lg overflow-hidden">
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-200">
@@ -184,7 +184,7 @@ const ImageReviewPage: React.FC<ReviewPageProps> = ({
           </div>
 
           {/* Image Annotation Section */}
-          <div className="p-6">
+          <div className="py-6 px-44">
             <div className="mb-6">
               <h2 className="text-lg font-medium text-gray-900 mb-4">
                 Annotate the Image
@@ -196,7 +196,6 @@ const ImageReviewPage: React.FC<ReviewPageProps> = ({
                       src={imageHref}
                       alt={`Review image ${uniqueId}`}
                       className="max-w-full h-auto"
-                      style={{ maxHeight: '600px' }}
                     />
                   </ImageAnnotator>
                   <ImageAnnotationPopup
