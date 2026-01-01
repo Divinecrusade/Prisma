@@ -46,7 +46,7 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg border max-w-xs">
+    <div className="bg-white p-4 rounded-lg shadow-lg border max-w-xs" style={{ color: '#000' }}>
       <div className="mb-3">
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Add Comment
