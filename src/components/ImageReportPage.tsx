@@ -18,16 +18,15 @@ interface ReportData {
   submittedAt: string;
 }
 
-interface ImageReportPageHeatmapProps {
+interface ImageReportPageProps {
   uniqueId: string;
 }
 
-const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueId }) => {
+const ImageReportPage: React.FC<ImageReportPageProps> = ({ uniqueId }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [canvasHeight, setCanvasHeight] = useState(400);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
-  const [isHeatmapMode, setIsHeatmapMode] = useState(false);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [densityData, setDensityData] = useState<number[][]>([]);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
@@ -438,7 +437,7 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
 
       // Set heatmap mode
       const showHeatmapLocation = gl.getUniformLocation(program, 'u_showHeatmap');
-      gl.uniform1i(showHeatmapLocation, isHeatmapMode ? 1 : 0);
+      gl.uniform1i(showHeatmapLocation, 1);
 
       // Calculate density grid for statistics
       const density = calculateAnnotationDensity(reportData.annotations, canvas.width, canvas.height);
@@ -509,7 +508,7 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
     if (reportData) {
       renderVisualization();
     }
-  }, [reportData, isHeatmapMode]);
+  }, [reportData]);
 
   if (!reportData) {
     return (
@@ -590,36 +589,16 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
                 </div>
               </div>
               <div className="flex flex-col space-y-2">
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => setIsHeatmapMode(false)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      !isHeatmapMode
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Standard View
-                  </button>
-                  <button
-                    onClick={() => setIsHeatmapMode(true)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isHeatmapMode
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                    }`}
-                  >
-                    Density Analysis
-                  </button>
-                </div>
-                {isHeatmapMode && (
                   <button
                     onClick={() => setShowAnnotations(!showAnnotations)}
-                    className="px-4 py-2 rounded-md text-sm font-medium bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors"
+                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors text-white ${
+                      showAnnotations 
+                        ? 'bg-blue-500 hover:bg-blue-600' 
+                        : 'bg-gray-500 hover:bg-gray-600'
+                    }`}
                   >
                     {showAnnotations ? 'Hide' : 'Show'} Annotations
                   </button>
-                )}
               </div>
             </div>
           </div>
@@ -628,7 +607,7 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
             <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
               <div className="xl:col-span-3">
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  {isHeatmapMode ? 'Annotation Density Visualization' : 'Annotated Content'}
+                  Annotation Density Visualization
                 </h2>
                 <div className="relative border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
                   <canvas
@@ -639,7 +618,7 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
                   />
                   
                   {/* Annotation overlay */}
-                  {(isHeatmapMode && showAnnotations) && (
+                  {showAnnotations && (
                     <div 
                       ref={overlayRef}
                       className="absolute inset-0 cursor-pointer"
@@ -678,7 +657,7 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
                   )}
                   
                   {/* Tooltip for hovered annotation */}
-                  {hoveredAnnotationData && isHeatmapMode && showAnnotations && (
+                  {hoveredAnnotationData && showAnnotations && (
                     <div 
                       className="absolute z-30 bg-gray-900 text-white p-3 rounded-lg shadow-xl max-w-xs pointer-events-none"
                       style={{
@@ -697,32 +676,30 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
                   )}
                 </div>
                 
-                {isHeatmapMode && (
-                  <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <h3 className="font-medium text-blue-900 mb-3">Analysis Insights</h3>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium text-blue-800">Maximum Density:</span>
-                        <div className="text-blue-700">{stats.max} overlapping annotations</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-blue-800">Average Density:</span>
-                        <div className="text-blue-700">{stats.average.toFixed(2)} annotations per region</div>
-                      </div>
-                      <div>
-                        <span className="font-medium text-blue-800">Coverage Area:</span>
-                        <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
-                      </div>
+                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-medium text-blue-900 mb-3">Analysis Insights</h3>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-blue-800">Maximum Density:</span>
+                      <div className="text-blue-700">{stats.max} overlapping annotations</div>
                     </div>
-                    {showAnnotations && (
-                      <div className="mt-4 pt-4 border-t border-blue-200">
-                        <p className="text-xs text-blue-800">
-                          Hover over colored rectangles to view annotation details. Click to select and highlight in the sidebar.
-                        </p>
-                      </div>
-                    )}
+                    <div>
+                      <span className="font-medium text-blue-800">Average Density:</span>
+                      <div className="text-blue-700">{stats.average.toFixed(2)} annotations per region</div>
+                    </div>
+                    <div>
+                      <span className="font-medium text-blue-800">Coverage Area:</span>
+                      <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
+                    </div>
                   </div>
-                )}
+                  {showAnnotations && (
+                    <div className="mt-4 pt-4 border-t border-blue-200">
+                      <p className="text-xs text-blue-800">
+                        Hover over colored rectangles to view annotation details. Click to select and highlight in the sidebar.
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="xl:col-span-1">
@@ -806,4 +783,4 @@ const ImageReportPageHeatmap: React.FC<ImageReportPageHeatmapProps> = ({ uniqueI
   );
 };
 
-export default ImageReportPageHeatmap;
+export default ImageReportPage;
