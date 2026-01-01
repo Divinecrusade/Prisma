@@ -27,7 +27,7 @@ const AnnotationReportPage: React.FC<AnnotationReportProps> = ({ uniqueId }) => 
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [, setImageDimensions] = useState({ width: 0, height: 0 });
+  const [imageDimensions, setImageDimensions] = useState({ width: 0, height: 0 });
   const [scaleFactor, setScaleFactor] = useState({ x: 1, y: 1 });
   const imageRef = useRef<HTMLImageElement>(null);
 
@@ -159,7 +159,7 @@ const AnnotationReportPage: React.FC<AnnotationReportProps> = ({ uniqueId }) => 
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                   Annotated Image
                 </h2>
-                <div className="relative border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                <div className="relative overflow-hidden">
                   <div className="relative inline-block w-full">
                     <img
                       ref={imageRef}
@@ -206,7 +206,7 @@ const AnnotationReportPage: React.FC<AnnotationReportProps> = ({ uniqueId }) => 
                 <h2 className="text-lg font-medium text-gray-900 mb-4">
                   Annotation Details
                 </h2>
-                <div className="space-y-4 max-h-96 overflow-y-auto">
+                <div className="space-y-4 overflow-y-auto" style={{ maxHeight: imageDimensions.height > 0 ? `${imageDimensions.height}px` : 'auto' }}>
                   {reportData.annotations.map((annotation, index) => (
                     <div
                       key={annotation.id}
