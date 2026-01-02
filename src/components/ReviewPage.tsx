@@ -185,48 +185,33 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
       const naturalWidth = img.naturalWidth;
       const aspectRatio = naturalWidth / naturalHeight;
       
-      // Compare FULL viewport against image dimensions for overflow decision
-      const heightTooSmall = window.innerHeight <= (3 / 4) * naturalHeight;
-      const widthTooSmall = window.innerWidth <= (3 / 4) * naturalWidth;
+      // Scale to fit available space (accounting for header)
+      const scaleByHeight = availableHeight;
+      const widthIfScaledByHeight = scaleByHeight * aspectRatio;
       
-      if (heightTooSmall || widthTooSmall) {
-        // No scaling, allow overflow
-        setImageDimensions({
-          naturalWidth,
-          naturalHeight,
-          scaledHeight: null,
-          scaledWidth: null,
-          allowOverflow: true
-        });
+      const scaleByWidth = availableWidth;
+      const heightIfScaledByWidth = scaleByWidth / aspectRatio;
+      
+      let finalWidth: number;
+      let finalHeight: number;
+      
+      if (widthIfScaledByHeight <= availableWidth) {
+        // Height is the constraining dimension
+        finalHeight = scaleByHeight;
+        finalWidth = widthIfScaledByHeight;
       } else {
-        // Scale to fit available space (accounting for header)
-        const scaleByHeight = availableHeight;
-        const widthIfScaledByHeight = scaleByHeight * aspectRatio;
-        
-        const scaleByWidth = availableWidth;
-        const heightIfScaledByWidth = scaleByWidth / aspectRatio;
-        
-        let finalWidth: number;
-        let finalHeight: number;
-        
-        if (widthIfScaledByHeight <= availableWidth) {
-          // Height is the constraining dimension
-          finalHeight = scaleByHeight;
-          finalWidth = widthIfScaledByHeight;
-        } else {
-          // Width is the constraining dimension
-          finalWidth = scaleByWidth;
-          finalHeight = heightIfScaledByWidth;
-        }
-        
-        setImageDimensions({
-          naturalWidth,
-          naturalHeight,
-          scaledHeight: finalHeight,
-          scaledWidth: finalWidth,
-          allowOverflow: false
-        });
+        // Width is the constraining dimension
+        finalWidth = scaleByWidth;
+        finalHeight = heightIfScaledByWidth;
       }
+      
+      setImageDimensions({
+        naturalWidth,
+        naturalHeight,
+        scaledHeight: finalHeight,
+        scaledWidth: finalWidth,
+        allowOverflow: false
+      });
     };
 
     img.onload = calculateDimensions;
