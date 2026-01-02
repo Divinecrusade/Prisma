@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Annotorious, 
   ImageAnnotator, 
@@ -20,6 +20,13 @@ interface AnnotationData {
   imageHref: string;
   textContent: string;
   annotations: ImageAnnotation[];
+}
+
+interface ImageDimensions {
+  naturalWidth: number;
+  naturalHeight: number;
+  scaledHeight: number | null;
+  allowOverflow: boolean;
 }
 
 // Custom popup component for text input
@@ -103,64 +110,46 @@ const AnnotationHandler: React.FC<{
   };
 
   return (
-    <div className="mt-6">
-      {/* Annotations Summary */}
-      {annotations.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-md font-medium text-gray-900 mb-2">
-            Current Annotations ({annotations.length})
-          </h3>
-          <div className="bg-gray-50 rounded-md p-3">
-            <div className="text-sm text-gray-600">
-              You have created {annotations.length} annotation{annotations.length !== 1 ? 's' : ''} on this image.
+    <>
+      {/* Success Message - positioned in center of header */}
+      <div className="flex-1 flex justify-center">
+        {showSuccessMessage && (
+          <div className="bg-green-50 border border-green-200 rounded-md px-4 py-2">
+            <div className="flex items-center">
+              <svg className="h-5 w-5 text-green-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="text-sm font-medium text-green-800">
+                You sent answer successfully
+              </p>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Submit Button */}
-      <div className="flex items-center justify-between">
-        <div className="flex-1">
-          {showSuccessMessage && (
-            <div className="bg-green-50 border border-green-200 rounded-md p-4">
-              <div className="flex">
-                <div className="shrink-0">
-                  <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-medium text-green-800">
-                    You sent answer successfully
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          onClick={handleSubmitAnnotations}
-          disabled={isSubmitting || annotations.length === 0}
-          className={`ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white ${
-            isSubmitting || annotations.length === 0
-              ? 'bg-gray-400 cursor-not-allowed'
-              : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-          }`}
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Submitting...
-            </>
-          ) : (
-            'Submit Annotations'
-          )}
-        </button>
+        )}
       </div>
-    </div>
+
+      {/* Submit Button - positioned on right of header */}
+      <button
+        onClick={handleSubmitAnnotations}
+        disabled={isSubmitting || annotations.length === 0}
+        className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white ${
+          isSubmitting || annotations.length === 0
+            ? 'bg-gray-400 cursor-not-allowed'
+            : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+        }`}
+      >
+        {isSubmitting ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Submitting...
+          </>
+        ) : (
+          'Submit Annotations'
+        )}
+      </button>
+    </>
   );
 };
 
@@ -169,49 +158,104 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
   uniqueId,
   textContent
 }) => {
+  const headerRef = useRef<HTMLDivElement>(null);
+  const [imageDimensions, setImageDimensions] = useState<ImageDimensions>({
+    naturalWidth: 0,
+    naturalHeight: 0,
+    scaledHeight: null,
+    allowOverflow: false
+  });
+
+  // Calculate scaling on mount and window resize
+  useEffect(() => {
+    const img = new Image();
+    img.src = imageHref;
+    
+    const calculateDimensions = () => {
+      if (img.naturalWidth === 0) return;
+      
+      const headerHeight = headerRef.current?.offsetHeight || 80;
+      const padding = 32; // 16px top + 16px bottom (p-4)
+      const availableHeight = window.innerHeight - headerHeight - padding;
+      
+      const naturalHeight = img.naturalHeight;
+      
+      // If viewport height <= 3/4 of image height, allow overflow (no scaling)
+      if (availableHeight <= (3 / 4) * naturalHeight) {
+        setImageDimensions({
+          naturalWidth: img.naturalWidth,
+          naturalHeight: naturalHeight,
+          scaledHeight: null,
+          allowOverflow: true
+        });
+      } else {
+        // Scale image to fit available height
+        setImageDimensions({
+          naturalWidth: img.naturalWidth,
+          naturalHeight: naturalHeight,
+          scaledHeight: availableHeight,
+          allowOverflow: false
+        });
+      }
+    };
+
+    img.onload = calculateDimensions;
+    
+    // Recalculate on resize
+    window.addEventListener('resize', calculateDimensions);
+    
+    // If image is cached, calculate immediately
+    if (img.complete) {
+      calculateDimensions();
+    }
+
+    return () => window.removeEventListener('resize', calculateDimensions);
+  }, [imageHref]);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="w-full">
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-200">
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${imageDimensions.allowOverflow ? '' : 'h-screen overflow-hidden'}`}>
+      <Annotorious>
+        {/* Header Row */}
+        <div ref={headerRef} className="px-6 py-4 bg-white flex items-center flex-shrink-0">
+          {/* Left: Title + Description */}
+          <div className="flex-shrink-0">
             <h1 className="text-2xl font-semibold text-gray-900">
               Image Review - {uniqueId}
             </h1>
             {textContent && (
-              <p className="mt-2 text-gray-600">{textContent}</p>
+              <p className="mt-1 text-gray-600">{textContent}</p>
             )}
           </div>
 
-          {/* Image Annotation Section */}
-          <div className="py-6 px-44">
-            <div className="mb-6">
-              <h2 className="text-lg font-medium text-gray-900 mb-4">
-                Annotate the Image
-              </h2>
-              <div className="border border-gray-300 rounded-lg overflow-hidden">
-                <Annotorious>
-                  <ImageAnnotator>
-                    <img
-                      src={imageHref}
-                      alt={`Review image ${uniqueId}`}
-                      className="max-w-full h-auto"
-                    />
-                  </ImageAnnotator>
-                  <ImageAnnotationPopup
-                    popup={(props) => <CommentPopup {...props} />}
-                  />
-                  <AnnotationHandler
-                    uniqueId={uniqueId}
-                    imageHref={imageHref}
-                    textContent={textContent}
-                  />
-                </Annotorious>
-              </div>
-            </div>
+          {/* Center: Success Message | Right: Submit Button */}
+          <AnnotationHandler
+            uniqueId={uniqueId}
+            imageHref={imageHref}
+            textContent={textContent}
+          />
+        </div>
+
+        {/* Image Section */}
+        <div className={`flex-1 flex items-center justify-center p-4 ${imageDimensions.allowOverflow ? '' : 'overflow-hidden'}`}>
+          <div className="rounded-lg overflow-hidden">
+            <ImageAnnotator>
+              <img
+                src={imageHref}
+                alt={`Review image ${uniqueId}`}
+                style={{
+                  height: imageDimensions.scaledHeight ? `${imageDimensions.scaledHeight}px` : 'auto',
+                  width: 'auto',
+                  maxWidth: '100%'
+                }}
+              />
+            </ImageAnnotator>
           </div>
         </div>
-      </div>
+
+        <ImageAnnotationPopup
+          popup={(props) => <CommentPopup {...props} />}
+        />
+      </Annotorious>
     </div>
   );
 };
