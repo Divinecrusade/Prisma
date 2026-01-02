@@ -246,9 +246,9 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     <div className={`min-h-screen bg-gray-50 flex flex-col ${imageDimensions.allowOverflow ? '' : 'h-screen overflow-hidden'}`}>
       <Annotorious>
         {/* Header Row */}
-        <div ref={headerRef} className="px-6 py-4 bg-white flex items-center flex-shrink-0">
+        <div ref={headerRef} className="px-6 py-4 bg-white flex items-center shrink-0">
           {/* Left: Title + Description */}
-          <div className="flex-shrink-0">
+          <div className="shrink-0">
             <h1 className="text-2xl font-semibold text-gray-900">
               Image Review - {uniqueId}
             </h1>
