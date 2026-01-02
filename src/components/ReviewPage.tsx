@@ -26,6 +26,7 @@ interface ImageDimensions {
   naturalWidth: number;
   naturalHeight: number;
   scaledHeight: number | null;
+  scaledWidth: number | null;
   allowOverflow: boolean;
 }
 
@@ -163,6 +164,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     naturalWidth: 0,
     naturalHeight: 0,
     scaledHeight: null,
+    scaledWidth: null,
     allowOverflow: false
   });
 
@@ -177,23 +179,51 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
       const headerHeight = headerRef.current?.offsetHeight || 80;
       const padding = 32; // 16px top + 16px bottom (p-4)
       const availableHeight = window.innerHeight - headerHeight - padding;
+      const availableWidth = window.innerWidth - padding;
       
       const naturalHeight = img.naturalHeight;
+      const naturalWidth = img.naturalWidth;
+      const aspectRatio = naturalWidth / naturalHeight;
       
-      // If viewport height <= 3/4 of image height, allow overflow (no scaling)
-      if (availableHeight <= (3 / 4) * naturalHeight) {
+      // Compare FULL viewport against image dimensions for overflow decision
+      const heightTooSmall = window.innerHeight <= (3 / 4) * naturalHeight;
+      const widthTooSmall = window.innerWidth <= (3 / 4) * naturalWidth;
+      
+      if (heightTooSmall || widthTooSmall) {
+        // No scaling, allow overflow
         setImageDimensions({
-          naturalWidth: img.naturalWidth,
-          naturalHeight: naturalHeight,
+          naturalWidth,
+          naturalHeight,
           scaledHeight: null,
+          scaledWidth: null,
           allowOverflow: true
         });
       } else {
-        // Scale image to fit available height
+        // Scale to fit available space (accounting for header)
+        const scaleByHeight = availableHeight;
+        const widthIfScaledByHeight = scaleByHeight * aspectRatio;
+        
+        const scaleByWidth = availableWidth;
+        const heightIfScaledByWidth = scaleByWidth / aspectRatio;
+        
+        let finalWidth: number;
+        let finalHeight: number;
+        
+        if (widthIfScaledByHeight <= availableWidth) {
+          // Height is the constraining dimension
+          finalHeight = scaleByHeight;
+          finalWidth = widthIfScaledByHeight;
+        } else {
+          // Width is the constraining dimension
+          finalWidth = scaleByWidth;
+          finalHeight = heightIfScaledByWidth;
+        }
+        
         setImageDimensions({
-          naturalWidth: img.naturalWidth,
-          naturalHeight: naturalHeight,
-          scaledHeight: availableHeight,
+          naturalWidth,
+          naturalHeight,
+          scaledHeight: finalHeight,
+          scaledWidth: finalWidth,
           allowOverflow: false
         });
       }
@@ -244,8 +274,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
                 alt={`Review image ${uniqueId}`}
                 style={{
                   height: imageDimensions.scaledHeight ? `${imageDimensions.scaledHeight}px` : 'auto',
-                  width: 'auto',
-                  maxWidth: '100%'
+                  width: imageDimensions.scaledWidth ? `${imageDimensions.scaledWidth}px` : 'auto'
                 }}
               />
             </ImageAnnotator>
