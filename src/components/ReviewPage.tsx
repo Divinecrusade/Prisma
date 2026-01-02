@@ -7,6 +7,7 @@ import {
   useAnnotations,
   type ImageAnnotation 
 } from '@annotorious/react';
+import { Button } from '@untitledui/base/buttons/button';
 import '@annotorious/react/annotorious-react.css';
 
 interface ReviewPageProps {
@@ -27,8 +28,20 @@ interface ImageDimensions {
   naturalHeight: number;
   scaledHeight: number | null;
   scaledWidth: number | null;
-  allowOverflow: boolean;
 }
+
+// Icon components
+const CheckIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+const SendIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+  </svg>
+);
 
 // Custom popup component for text input
 const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
@@ -54,25 +67,27 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
   };
 
   return (
-    <div className="bg-white p-4 rounded-lg shadow-lg border max-w-xs" style={{ color: '#000' }}>
+    <div className="bg-primary border-primary max-w-xs rounded-lg border p-4 shadow-lg">
       <div className="mb-3">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="text-secondary mb-1 block text-sm font-medium">
           Add Comment
         </label>
         <textarea
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          className="border-primary bg-primary text-primary focus:ring-brand-solid w-full rounded-md border px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2"
           rows={3}
           placeholder="Enter your comment..."
         />
       </div>
-      <button
+      <Button
+        color="primary"
+        size="sm"
         onClick={onSave}
-        className="w-full bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full"
       >
         Save
-      </button>
+      </Button>
     </div>
   );
 };
@@ -112,44 +127,34 @@ const AnnotationHandler: React.FC<{
 
   return (
     <>
-      {/* Success Message - positioned in center of header */}
-      <div className="flex-1 flex justify-center">
-        {showSuccessMessage && (
-          <div className="bg-green-50 border border-green-200 rounded-md px-4 py-2">
-            <div className="flex items-center">
-              <svg className="h-5 w-5 text-green-400 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-              </svg>
-              <p className="text-sm font-medium text-green-800">
+      {/* Success Message */}
+      {showSuccessMessage && (
+        <div className="flex-1 flex justify-center">
+          <div className="bg-success-primary border-success rounded-md border px-4 py-2">
+            <div className="flex items-center gap-2">
+              <CheckIcon className="text-fg-success-primary h-5 w-5" />
+              <p className="text-fg-success-primary text-sm font-medium">
                 You sent answer successfully
               </p>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+      
+      {!showSuccessMessage && <div className="flex-1" />}
 
-      {/* Submit Button - positioned on right of header */}
-      <button
+      {/* Submit Button */}
+      <Button
+        color="primary"
+        size="md"
         onClick={handleSubmitAnnotations}
-        disabled={isSubmitting || annotations.length === 0}
-        className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md shadow-sm text-white ${
-          isSubmitting || annotations.length === 0
-            ? 'bg-gray-400 cursor-not-allowed'
-            : 'bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
-        }`}
+        isDisabled={annotations.length === 0}
+        isLoading={isSubmitting}
+        showTextWhileLoading
+        iconLeading={SendIcon}
       >
-        {isSubmitting ? (
-          <>
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            Submitting...
-          </>
-        ) : (
-          'Submit Annotations'
-        )}
-      </button>
+        Submit Annotations
+      </Button>
     </>
   );
 };
@@ -159,13 +164,12 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
   uniqueId,
   textContent
 }) => {
-  const headerRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [imageDimensions, setImageDimensions] = useState<ImageDimensions>({
     naturalWidth: 0,
     naturalHeight: 0,
     scaledHeight: null,
     scaledWidth: null,
-    allowOverflow: false
   });
 
   // Calculate scaling on mount and window resize
@@ -176,8 +180,8 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     const calculateDimensions = () => {
       if (img.naturalWidth === 0) return;
       
-      const headerHeight = headerRef.current?.offsetHeight || 80;
-      const padding = 32; // 16px top + 16px bottom (p-4)
+      const headerHeight = 80;
+      const padding = 32;
       const availableHeight = window.innerHeight - headerHeight - padding;
       const availableWidth = window.innerWidth - padding;
       
@@ -185,7 +189,6 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
       const naturalWidth = img.naturalWidth;
       const aspectRatio = naturalWidth / naturalHeight;
       
-      // Scale to fit available space (accounting for header)
       const scaleByHeight = availableHeight;
       const widthIfScaledByHeight = scaleByHeight * aspectRatio;
       
@@ -196,11 +199,9 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
       let finalHeight: number;
       
       if (widthIfScaledByHeight <= availableWidth) {
-        // Height is the constraining dimension
         finalHeight = scaleByHeight;
         finalWidth = widthIfScaledByHeight;
       } else {
-        // Width is the constraining dimension
         finalWidth = scaleByWidth;
         finalHeight = heightIfScaledByWidth;
       }
@@ -210,16 +211,12 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
         naturalHeight,
         scaledHeight: finalHeight,
         scaledWidth: finalWidth,
-        allowOverflow: false
       });
     };
 
     img.onload = calculateDimensions;
-    
-    // Recalculate on resize
     window.addEventListener('resize', calculateDimensions);
     
-    // If image is cached, calculate immediately
     if (img.complete) {
       calculateDimensions();
     }
@@ -227,42 +224,50 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     return () => window.removeEventListener('resize', calculateDimensions);
   }, [imageHref]);
 
+  const contentWidth = imageDimensions.scaledWidth ? `${imageDimensions.scaledWidth}px` : 'auto';
+
   return (
-    <div className={`min-h-screen bg-gray-50 flex flex-col ${imageDimensions.allowOverflow ? '' : 'h-screen overflow-hidden'}`}>
+    <div className="bg-secondary flex h-screen flex-col overflow-hidden">
       <Annotorious>
-        {/* Header Row */}
-        <div ref={headerRef} className="px-6 py-4 bg-white flex items-center shrink-0">
-          {/* Left: Title + Description */}
-          <div className="shrink-0">
-            <h1 className="text-2xl font-semibold text-gray-900">
-              Image Review - {uniqueId}
-            </h1>
-            {textContent && (
-              <p className="mt-1 text-gray-600">{textContent}</p>
-            )}
+        {/* Main content wrapper - aligned left */}
+        <div ref={containerRef} className="flex h-full flex-col p-4">
+          {/* Header Row - centered content, width matches image */}
+          <div 
+            className="bg-primary mb-4 flex shrink-0 items-center rounded-lg px-6 py-4 shadow-sm"
+            style={{ width: contentWidth }}
+          >
+            {/* Left: Title + Description */}
+            <div className="shrink-0">
+              <h1 className="text-primary text-xl font-semibold">
+                Image Review - {uniqueId}
+              </h1>
+              {textContent && (
+                <p className="text-tertiary mt-1 text-sm">{textContent}</p>
+              )}
+            </div>
+
+            {/* Center: Success Message | Right: Submit Button */}
+            <AnnotationHandler
+              uniqueId={uniqueId}
+              imageHref={imageHref}
+              textContent={textContent}
+            />
           </div>
 
-          {/* Center: Success Message | Right: Submit Button */}
-          <AnnotationHandler
-            uniqueId={uniqueId}
-            imageHref={imageHref}
-            textContent={textContent}
-          />
-        </div>
-
-        {/* Image Section */}
-        <div className={`flex-1 flex items-center justify-center p-4 ${imageDimensions.allowOverflow ? '' : 'overflow-hidden'}`}>
-          <div className="rounded-lg overflow-hidden">
-            <ImageAnnotator>
-              <img
-                src={imageHref}
-                alt={`Review image ${uniqueId}`}
-                style={{
-                  height: imageDimensions.scaledHeight ? `${imageDimensions.scaledHeight}px` : 'auto',
-                  width: imageDimensions.scaledWidth ? `${imageDimensions.scaledWidth}px` : 'auto'
-                }}
-              />
-            </ImageAnnotator>
+          {/* Image Section - aligned left */}
+          <div className="flex-1 overflow-hidden">
+            <div className="overflow-hidden rounded-lg">
+              <ImageAnnotator>
+                <img
+                  src={imageHref}
+                  alt={`Review image ${uniqueId}`}
+                  style={{
+                    height: imageDimensions.scaledHeight ? `${imageDimensions.scaledHeight}px` : 'auto',
+                    width: imageDimensions.scaledWidth ? `${imageDimensions.scaledWidth}px` : 'auto'
+                  }}
+                />
+              </ImageAnnotator>
+            </div>
           </div>
         </div>
 
