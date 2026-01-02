@@ -13,6 +13,7 @@
     "@annotorious/react": "^3.7.19",
     "@recogito/annotorious": "^2.7.14",
     "@tailwindcss/postcss": "^4.1.18",
+    "@untitledui/icons": "^0.0.19",
     "react": "^19.2.0",
     "react-aria-components": "^1.14.0",
     "react-dom": "^19.2.0",

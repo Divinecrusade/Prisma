@@ -8,6 +8,8 @@ import {
   type ImageAnnotation 
 } from '@annotorious/react';
 import { Button } from '@untitledui/base/buttons/button';
+import { TextAreaBase } from '@untitledui/base/textarea/textarea';
+import { CheckCircle, Send01, Save01 } from '@untitledui/icons';
 import '@annotorious/react/annotorious-react.css';
 
 interface ReviewPageProps {
@@ -29,19 +31,6 @@ interface ImageDimensions {
   scaledHeight: number | null;
   scaledWidth: number | null;
 }
-
-// Icon components
-const CheckIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-  </svg>
-);
-
-const SendIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-  </svg>
-);
 
 // Custom popup component for text input
 const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
@@ -69,13 +58,12 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
   return (
     <div className="bg-primary border-primary max-w-xs rounded-lg border p-4 shadow-lg">
       <div className="mb-3">
-        <label className="text-secondary mb-1 block text-sm font-medium">
+        <label className="text-secondary mb-1.5 block text-sm font-medium">
           Add Comment
         </label>
-        <textarea
+        <TextAreaBase
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="border-primary bg-primary text-primary focus:ring-brand-solid w-full rounded-md border px-3 py-2 focus:border-transparent focus:outline-none focus:ring-2"
           rows={3}
           placeholder="Enter your comment..."
         />
@@ -85,6 +73,7 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
         size="sm"
         onClick={onSave}
         className="w-full"
+        iconLeading={Save01}
       >
         Save
       </Button>
@@ -129,10 +118,10 @@ const AnnotationHandler: React.FC<{
     <>
       {/* Success Message */}
       {showSuccessMessage && (
-        <div className="flex-1 flex justify-center">
+        <div className="flex flex-1 justify-center">
           <div className="bg-success-primary border-success rounded-md border px-4 py-2">
             <div className="flex items-center gap-2">
-              <CheckIcon className="text-fg-success-primary h-5 w-5" />
+              <CheckCircle className="text-fg-success-primary size-5" />
               <p className="text-fg-success-primary text-sm font-medium">
                 You sent answer successfully
               </p>
@@ -151,7 +140,7 @@ const AnnotationHandler: React.FC<{
         isDisabled={annotations.length === 0}
         isLoading={isSubmitting}
         showTextWhileLoading
-        iconLeading={SendIcon}
+        iconLeading={Send01}
       >
         Submit Annotations
       </Button>
