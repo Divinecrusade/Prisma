@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router';
 import ImageReviewPage from './components/ReviewPage';
 import AnnotationReportPage from './components/ReportPage';
+import LoginPage from './components/LoginPage';
 import './App.css'
 
 
@@ -42,6 +43,7 @@ const ReportPageWrapper: React.FC = () => {
 const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/review/:uniqueId" element={<ReviewPageWrapper />} />
       <Route path="/report/:uniqueId" element={<ReportPageWrapper />} />
     </Routes>
