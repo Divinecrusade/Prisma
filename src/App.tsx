@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useParams } from 'react-router';
 import ImageReviewPage from './components/ReviewPage';
 import AnnotationReportPage from './components/ReportPage';
 import LoginPage from './components/LoginPage';
+import AdminPage from './components/AdminPage';
 import './App.css'
 
 
@@ -44,6 +45,7 @@ const App: React.FC = () => (
   <BrowserRouter>
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/admin" element={<AdminPage />} />
       <Route path="/review/:uniqueId" element={<ReviewPageWrapper />} />
       <Route path="/report/:uniqueId" element={<ReportPageWrapper />} />
     </Routes>
