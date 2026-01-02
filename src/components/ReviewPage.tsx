@@ -8,7 +8,6 @@ import {
   type ImageAnnotation 
 } from '@annotorious/react';
 import '@annotorious/react/annotorious-react.css';
-import '../styles/review.css'
 
 interface ReviewPageProps {
   imageHref: string;

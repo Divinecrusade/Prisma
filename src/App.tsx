@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router';
+import { useEffect } from 'react';
 import ImageReviewPage from './components/ReviewPage';
 import AnnotationReportPage from './components/ReportPage';
 import LoginPage from './components/LoginPage';
@@ -10,6 +11,13 @@ import './App.css'
 const ReviewPageWrapper: React.FC = () => {
   const { uniqueId } = useParams<{ uniqueId: string }>();
   
+  useEffect(() => {
+    document.getElementById('root')?.classList.add('no-center');
+    return () => {
+      document.getElementById('root')?.classList.remove('no-center');
+    };
+  }, []);
+
   if (!uniqueId) {
     return <div>Error: Missing unique ID</div>;
   }
