@@ -1,4 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { Button } from '@untitledui/base/buttons/button';
+import { Eye, EyeOff } from '@untitledui/icons';
 
 interface AnnotationData {
   id: string;
@@ -33,7 +35,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
 
-  // Fixed vertex shader - no resolution transformation needed
   const vertexShaderSource = `
     attribute vec2 a_position;
     attribute vec2 a_texCoord;
@@ -45,7 +46,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     }
   `;
 
-  // Fixed fragment shader with proper uniform handling
   const fragmentShaderSource = `
     precision mediump float;
     varying vec2 v_texCoord;
@@ -57,10 +57,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       vec4 imageColor = texture2D(u_image, v_texCoord);
       
       if (u_showHeatmap) {
-        // Sample the density texture for actual annotation data
         float density = texture2D(u_densityTexture, v_texCoord).r;
         
-        // Create heatmap gradient: blue -> green -> yellow -> red
         vec3 heatColor;
         if (density < 0.25) {
           heatColor = mix(vec3(0.0, 0.0, 1.0), vec3(0.0, 1.0, 1.0), density * 4.0);
@@ -72,7 +70,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           heatColor = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 0.0, 0.0), (density - 0.75) * 4.0);
         }
         
-        // Blend heatmap with original image
         gl_FragColor = vec4(mix(imageColor.rgb, heatColor, density * 0.6), 1.0);
       } else {
         gl_FragColor = imageColor;
@@ -217,11 +214,9 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
         const ctx = canvas.getContext('2d');
         
         if (ctx) {
-          // Create a test pattern
           ctx.fillStyle = '#f0f8ff';
           ctx.fillRect(0, 0, 600, 400);
           
-          // Add some visual elements
           ctx.fillStyle = '#4a90e2';
           ctx.fillRect(50, 50, 150, 100);
           ctx.fillStyle = '#7ed321';
@@ -229,7 +224,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           ctx.fillStyle = '#f5a623';
           ctx.fillRect(400, 100, 100, 120);
           
-          // Add text
           ctx.fillStyle = '#333';
           ctx.font = '20px Arial';
           ctx.fillText('Sample Architectural Plan', 150, 300);
@@ -295,17 +289,14 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     const textureWidth = Math.ceil(width / gridSize);
     const textureHeight = Math.ceil(height / gridSize);
     
-    // Create density data array
     const densityData = new Uint8Array(textureWidth * textureHeight * 4);
     
-    // Calculate density for each grid cell
     for (let y = 0; y < textureHeight; y++) {
       for (let x = 0; x < textureWidth; x++) {
         const pixelX = x * gridSize;
         const pixelY = y * gridSize;
         let density = 0;
         
-        // Check each annotation for overlap with this grid cell
         for (const annotation of annotations) {
           if (pixelX < annotation.left + annotation.width &&
               pixelX + gridSize > annotation.left &&
@@ -315,14 +306,13 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           }
         }
         
-        // Normalize density (0-255)
         const normalizedDensity = Math.min(255, density * 75);
         const index = (y * textureWidth + x) * 4;
         
-        densityData[index] = normalizedDensity;     // R
-        densityData[index + 1] = normalizedDensity; // G
-        densityData[index + 2] = normalizedDensity; // B
-        densityData[index + 3] = 255;               // A
+        densityData[index] = normalizedDensity;
+        densityData[index + 1] = normalizedDensity;
+        densityData[index + 2] = normalizedDensity;
+        densityData[index + 3] = 255;
       }
     }
     
@@ -380,33 +370,29 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       
       gl.useProgram(program);
 
-      // Load the image texture
       const imageTexture = await loadImageTexture(gl, reportData.imageHref);
       console.log('Image texture loaded');
 
-      // Create density texture for heatmap
       const densityTexture = createDensityTexture(gl, reportData.annotations, canvas.width, canvas.height);
       if (!densityTexture) {
         console.error('Failed to create density texture');
         return;
       }
 
-      // Fixed vertex data - positions and texture coordinates separated
       const positions = new Float32Array([
-        -1.0, -1.0,  // Bottom left
-         1.0, -1.0,  // Bottom right
-        -1.0,  1.0,  // Top left
-         1.0,  1.0   // Top right
+        -1.0, -1.0,
+         1.0, -1.0,
+        -1.0,  1.0,
+         1.0,  1.0
       ]);
       
       const texCoords = new Float32Array([
-        0.0, 1.0,  // Bottom left
-        1.0, 1.0,  // Bottom right
-        0.0, 0.0,  // Top left
-        1.0, 0.0   // Top right
+        0.0, 1.0,
+        1.0, 1.0,
+        0.0, 0.0,
+        1.0, 0.0
       ]);
 
-      // Create and bind position buffer
       const positionBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW);
@@ -415,7 +401,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       gl.enableVertexAttribArray(positionLocation);
       gl.vertexAttribPointer(positionLocation, 2, gl.FLOAT, false, 0, 0);
 
-      // Create and bind texture coordinate buffer
       const texCoordBuffer = gl.createBuffer();
       gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer);
       gl.bufferData(gl.ARRAY_BUFFER, texCoords, gl.STATIC_DRAW);
@@ -424,7 +409,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       gl.enableVertexAttribArray(texCoordLocation);
       gl.vertexAttribPointer(texCoordLocation, 2, gl.FLOAT, false, 0, 0);
 
-      // Set up textures
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, imageTexture);
       const imageLocation = gl.getUniformLocation(program, 'u_image');
@@ -435,24 +419,25 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       const densityLocation = gl.getUniformLocation(program, 'u_densityTexture');
       gl.uniform1i(densityLocation, 1);
 
-      // Set heatmap mode
       const showHeatmapLocation = gl.getUniformLocation(program, 'u_showHeatmap');
       gl.uniform1i(showHeatmapLocation, 1);
 
-      // Calculate density grid for statistics
       const density = calculateAnnotationDensity(reportData.annotations, canvas.width, canvas.height);
       setDensityData(density);
 
-      // Clear and render
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.clearColor(0.0, 0.0, 0.0, 1.0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       
-      // Draw the quad
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
       
       console.log('Rendering completed');
-      setCanvasHeight(canvasRef.current?.clientHeight || 400);
+      
+      requestAnimationFrame(() => {
+        if (canvasRef.current) {
+          setCanvasHeight(canvasRef.current.clientHeight || 400);
+        }
+      });
     } catch (error) {
       console.error('Rendering error:', error);
     }
@@ -467,7 +452,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     
     setMousePosition({ x, y });
     
-    // Check if mouse is over any annotation
     let foundAnnotation: string | null = null;
     for (const annotation of reportData.annotations) {
       if (x >= annotation.left && 
@@ -489,7 +473,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     const x = ((event.clientX - rect.left) / rect.width) * 600;
     const y = ((event.clientY - rect.top) / rect.height) * 400;
     
-    // Check if click is on any annotation
     for (const annotation of reportData.annotations) {
       if (x >= annotation.left && 
           x <= annotation.left + annotation.width &&
@@ -500,7 +483,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       }
     }
     
-    // Click outside annotations clears selection
     setSelectedAnnotation(null);
   }, [reportData, selectedAnnotation]);
 
@@ -510,15 +492,28 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     }
   }, [reportData]);
 
+  useEffect(() => {
+    const handleResize = () => {
+      requestAnimationFrame(() => {
+        if (canvasRef.current) {
+          setCanvasHeight(canvasRef.current.clientHeight || 400);
+        }
+      });
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   if (!reportData) {
     return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-white shadow-sm rounded-lg p-8">
+      <div className="min-h-screen bg-secondary py-8">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="rounded-xl bg-primary p-8 shadow-sm">
             <div className="animate-pulse">
-              <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-              <div className="h-4 bg-gray-200 rounded w-2/3 mb-8"></div>
-              <div className="h-96 bg-gray-200 rounded"></div>
+              <div className="mb-4 h-8 w-1/3 rounded bg-gray-200"></div>
+              <div className="mb-8 h-4 w-2/3 rounded bg-gray-200"></div>
+              <div className="h-96 rounded bg-gray-200"></div>
             </div>
           </div>
         </div>
@@ -546,22 +541,21 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   
   const getAnnotationColor = (annotationId: string, index: number) => {
     if (selectedAnnotation === annotationId) {
-      return 'rgba(59, 130, 246, 0.8)'; // Blue for selected
+      return 'rgba(59, 130, 246, 0.8)';
     }
     if (hoveredAnnotation === annotationId) {
-      return 'rgba(34, 197, 94, 0.8)'; // Green for hovered
+      return 'rgba(34, 197, 94, 0.8)';
     }
     
-    // Use different colors for each annotation for better distinction
     const colors = [
-      'rgba(239, 68, 68, 0.5)',   // Red
-      'rgba(245, 158, 11, 0.5)',  // Amber
-      'rgba(236, 72, 153, 0.5)',  // Pink
-      'rgba(139, 92, 246, 0.5)',  // Violet
-      'rgba(14, 165, 233, 0.5)',  // Sky
-      'rgba(34, 197, 94, 0.5)',   // Green
-      'rgba(168, 85, 247, 0.5)',  // Purple
-      'rgba(251, 146, 60, 0.5)'   // Orange
+      'rgba(239, 68, 68, 0.5)',
+      'rgba(245, 158, 11, 0.5)',
+      'rgba(236, 72, 153, 0.5)',
+      'rgba(139, 92, 246, 0.5)',
+      'rgba(14, 165, 233, 0.5)',
+      'rgba(34, 197, 94, 0.5)',
+      'rgba(168, 85, 247, 0.5)',
+      'rgba(251, 146, 60, 0.5)'
     ];
     
     return colors[index % colors.length];
@@ -571,53 +565,40 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     ? reportData.annotations.find(a => a.id === hoveredAnnotation)
     : null;
 
+  const minBlockHeight = 180;
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-white shadow-sm rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <div className="flex justify-between items-start">
-              <div>
-                <h1 className="text-2xl font-semibold text-gray-900">
-                  Advanced Annotation Analysis - {reportData.uniqueId}
-                </h1>
-                <p className="mt-2 text-gray-600">{reportData.textContent}</p>
-                <div className="mt-4 flex space-x-6 text-sm text-gray-500">
-                  <span>Submitted: {new Date(reportData.submittedAt).toLocaleString()}</span>
-                  <span>Total Annotations: {reportData.annotations.length}</span>
-                  <span>Coverage: {stats.coverage.toFixed(1)}%</span>
-                </div>
-              </div>
-              <div className="flex flex-col space-y-2">
-                  <button
-                    onClick={() => setShowAnnotations(!showAnnotations)}
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors text-white ${
-                      showAnnotations 
-                        ? 'bg-blue-500 hover:bg-blue-600' 
-                        : 'bg-gray-500 hover:bg-gray-600'
-                    }`}
-                  >
-                    {showAnnotations ? 'Hide' : 'Show'} Annotations
-                  </button>
-              </div>
-            </div>
+    <div className="min-h-screen bg-secondary">
+      <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <div className="overflow-hidden rounded-xl bg-primary shadow-sm">
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-6">
+            <h1 className="text-display-sm font-semibold text-primary">
+              Advanced Annotation Analysis - {reportData.uniqueId}
+            </h1>
+            <Button
+              color={showAnnotations ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setShowAnnotations(!showAnnotations)}
+              iconLeading={showAnnotations ? Eye : EyeOff}
+            >
+              {showAnnotations ? 'Hide' : 'Show'} Annotations
+            </Button>
           </div>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+          <div className="px-6 pb-6">
+            {/* ROW 1: Image + Annotation Summary */}
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-4">
+              {/* Image with heatmap */}
               <div className="xl:col-span-3">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Annotation Density Visualization
-                </h2>
-                <div className="relative border border-gray-300 rounded-lg overflow-hidden bg-gray-50">
+                <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                   <canvas
                     ref={canvasRef}
                     width={600}
                     height={400}
-                    className="w-full h-auto block"
+                    className="block h-auto w-full"
                   />
                   
-                  {/* Annotation overlay */}
                   {showAnnotations && (
                     <div 
                       ref={overlayRef}
@@ -648,7 +629,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                             zIndex: selectedAnnotation === annotation.id ? 20 : hoveredAnnotation === annotation.id ? 10 : 1
                           }}
                         >
-                          <div className="absolute -top-6 left-0 bg-gray-900 text-white text-xs px-2 py-1 rounded">
+                          <div className="absolute -top-6 left-0 rounded bg-gray-900 px-2 py-1 text-xs text-white">
                             {index + 1}
                           </div>
                         </div>
@@ -656,29 +637,76 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                     </div>
                   )}
                   
-                  {/* Tooltip for hovered annotation */}
                   {hoveredAnnotationData && showAnnotations && (
                     <div 
-                      className="absolute z-30 bg-gray-900 text-white p-3 rounded-lg shadow-xl max-w-xs pointer-events-none"
+                      className="pointer-events-none absolute z-30 max-w-xs rounded-lg bg-gray-900 p-3 text-white shadow-xl"
                       style={{
                         left: Math.min(mousePosition.x + 10, 350),
                         top: Math.min(mousePosition.y + 10, 300)
                       }}
                     >
-                      <div className="text-xs font-semibold mb-1">
+                      <div className="mb-1 text-xs font-semibold">
                         Annotation #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
                       </div>
                       <div className="text-xs">{hoveredAnnotationData.text}</div>
-                      <div className="text-xs mt-2 text-gray-300">
+                      <div className="mt-2 text-xs text-gray-300">
                         Click to {selectedAnnotation === hoveredAnnotationData.id ? 'deselect' : 'select'}
                       </div>
                     </div>
                   )}
                 </div>
-                
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-medium text-blue-900 mb-3">Analysis Insights</h3>
-                  <div className="grid grid-cols-3 gap-4 text-sm">
+              </div>
+
+              {/* Annotation Summary sidebar */}
+              <div className="xl:col-span-1">
+                <div 
+                  className="flex flex-col"
+                  style={{ height: `${canvasHeight}px` }}
+                >
+                  <div className="flex-1 space-y-4 overflow-y-auto">
+                    {reportData.annotations.map((annotation, index) => (
+                      <div
+                        key={annotation.id}
+                        className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                          selectedAnnotation === annotation.id
+                            ? 'border-brand-500 bg-brand-50'
+                            : hoveredAnnotation === annotation.id
+                              ? 'border-success-500 bg-success-50'
+                              : 'border-gray-200 bg-primary hover:border-gray-300'
+                        }`}
+                        onClick={() => setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id)}
+                        onMouseEnter={() => setHoveredAnnotation(annotation.id)}
+                        onMouseLeave={() => setHoveredAnnotation(null)}
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div 
+                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                            style={{ backgroundColor: getAnnotationColor(annotation.id, index).replace('0.5)', '1)').replace('0.8)', '1)') }}
+                          >
+                            {index + 1}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-text-sm text-gray-900">
+                              {annotation.text}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2: Analysis Insights + Общая информация (full width) */}
+            <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-4">
+              {/* Analysis Insights - 3/4 width */}
+              <div 
+                className="rounded-lg border border-brand-200 bg-brand-50 p-4 xl:col-span-3"
+                style={{ minHeight: `${minBlockHeight}px` }}
+              >
+                  <h3 className="text-text-md font-semibold text-blue-900 mb-3">Analysis Insights</h3>
+                  <div className="grid grid-cols-3 gap-4 text-text-sm h-3/4 items-center">
                     <div>
                       <span className="font-medium text-blue-800">Maximum Density:</span>
                       <div className="text-blue-700">{stats.max} overlapping annotations</div>
@@ -692,89 +720,33 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                       <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
                     </div>
                   </div>
-                  {showAnnotations && (
-                    <div className="mt-4 pt-4 border-t border-blue-200">
-                      <p className="text-xs text-blue-800">
-                        Hover over colored rectangles to view annotation details. Click to select and highlight in the sidebar.
-                      </p>
-                    </div>
-                  )}
-                </div>
               </div>
 
-              <div className="xl:col-span-1">
-                <h2 className="text-lg font-medium text-gray-900 mb-4">
-                  Annotation Summary
-                </h2>
-                <div className="space-y-4 overflow-y-auto" style={{ height: `${canvasHeight}px` }}>
-                  {reportData.annotations.map((annotation, index) => (
-                    <div
-                      key={annotation.id}
-                      className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
-                        selectedAnnotation === annotation.id
-                          ? 'border-blue-500 bg-blue-50'
-                          : hoveredAnnotation === annotation.id
-                            ? 'border-green-500 bg-green-50'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                      }`}
-                      onClick={() => setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id)}
-                      onMouseEnter={() => setHoveredAnnotation(annotation.id)}
-                      onMouseLeave={() => setHoveredAnnotation(null)}
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div 
-                          className="shrink-0 w-6 h-6 rounded-full text-white text-xs font-bold flex items-center justify-center"
-                          style={{ backgroundColor: getAnnotationColor(annotation.id, index).replace('0.5)', '1)').replace('0.8)', '1)') }}
-                        >
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-gray-900 mb-2">
-                            {annotation.text}
-                          </p>
-                          <div className="text-xs text-gray-500 space-y-1">
-                            <div>Position: ({annotation.left}, {annotation.top})</div>
-                            <div>Dimensions: {annotation.width} × {annotation.height}</div>
-                            <div>Created: {new Date(annotation.timestamp).toLocaleTimeString()}</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium text-gray-900 mb-2">Quality Metrics</h3>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <div className="flex justify-between">
-                      <span>Total Annotations:</span>
-                      <span className="font-medium">{reportData.annotations.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Review Coverage:</span>
-                      <span className="font-medium">{stats.coverage.toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Annotation Density:</span>
-                      <span className="font-medium">{stats.average.toFixed(2)}</span>
-                    </div>
-                    {selectedAnnotation && (
-                      <div className="pt-2 mt-2 border-t border-gray-200">
-                        <span className="text-xs text-blue-600">
-                          Selected: Annotation #{reportData.annotations.findIndex(a => a.id === selectedAnnotation) + 1}
-                        </span>
-                      </div>
-                    )}
+              {/* Общая информация - 1/4 width */}
+              <div 
+                className="rounded-lg bg-gray-50 p-4 xl:col-span-1"
+                style={{ minHeight: `${minBlockHeight}px` }}
+              >
+                <h3 className="mb-3 text-text-md font-semibold text-gray-900">Общая информация</h3>
+                <div className="space-y-2 text-text-sm text-gray-600">
+                  <div className="flex justify-between">
+                    <span>Total Annotations:</span>
+                    <span className="font-medium">{reportData.annotations.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Review Coverage:</span>
+                    <span className="font-medium">{stats.coverage.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Annotation Density:</span>
+                    <span className="font-medium">{stats.average.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Generated:</span>
+                    <span className="font-medium">{new Date().toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
-            <div className="flex justify-between items-center text-sm text-gray-600">
-              <span>Analysis Report: {reportData.uniqueId}</span>
-              <span>Generated: {new Date().toLocaleDateString()}</span>
             </div>
           </div>
         </div>
