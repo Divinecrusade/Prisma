@@ -16,6 +16,7 @@ import {
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
+import EditImageModal from './EditImageModal';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -131,6 +132,28 @@ const AdminPage: React.FC = () => {
 
   const closeEditProjectModal = () => {
     setEditProjectModalState({ isOpen: false, project: null });
+  };
+
+  const [editImageModalState, setEditImageModalState] = useState<{
+    isOpen: boolean;
+    image: { id: string; name: string; question: string; url: string } | null;
+    projectId: string;
+  }>({
+    isOpen: false,
+    image: null,
+    projectId: ''
+  });
+
+  const openEditImageModal = (image: ResearchImage, projectId: string) => {
+    setEditImageModalState({
+      isOpen: true,
+      image: { id: image.id, name: image.name, question: image.question, url: image.url },
+      projectId
+    });
+  };
+
+  const closeEditImageModal = () => {
+    setEditImageModalState({ isOpen: false, image: null, projectId: '' });
   };
 
   const toggleProjectVisibility = (projectId: string) => {
@@ -317,6 +340,7 @@ const AdminPage: React.FC = () => {
                               <Button
                                 color="secondary"
                                 size="sm"
+                                onClick={() => openEditImageModal(image, project.id)}
                                 iconLeading={EditIcon}
                                 title="Edit image"
                               />
@@ -402,6 +426,14 @@ const AdminPage: React.FC = () => {
         isOpen={editProjectModalState.isOpen}
         onClose={closeEditProjectModal}
         project={editProjectModalState.project}
+      />
+
+      {/* Edit Image Modal */}
+      <EditImageModal
+        isOpen={editImageModalState.isOpen}
+        onClose={closeEditImageModal}
+        image={editImageModalState.image}
+        projectId={editImageModalState.projectId}
       />
     </div>
   );
