@@ -31,6 +31,7 @@ const UsersIcon = Users01;
 interface ResearchImage {
   id: string;
   name: string;
+  question: string;
   url: string;
   addedAt: string;
   isHidden: boolean;
@@ -58,6 +59,7 @@ const mockProjects: ResearchProject[] = [
       {
         id: 'img-1',
         name: 'Homepage Design',
+        question: 'How intuitive is the navigation layout on the homepage?',
         url: '/images/homepage.png',
         addedAt: '2024-01-15',
         isHidden: false,
@@ -66,6 +68,7 @@ const mockProjects: ResearchProject[] = [
       {
         id: 'img-2',
         name: 'Profile Page',
+        question: 'Is the user profile information easy to find and understand?',
         url: '/images/profile.png',
         addedAt: '2024-01-16',
         isHidden: false,
@@ -83,6 +86,7 @@ const mockProjects: ResearchProject[] = [
       {
         id: 'img-3',
         name: 'Cart Summary',
+        question: 'Does the cart summary clearly show all costs before checkout?',
         url: '/images/cart.png',
         addedAt: '2024-02-01',
         isHidden: true,
@@ -203,7 +207,7 @@ const AdminPage: React.FC = () => {
                         </span>
                       )}
                     </div>
-                    <p className="mt-1 text-text-sm text-gray-600">{project.description}</p>
+                    <p className="mt-1 text-text-sm text-gray-600 text-left">{project.description}</p>
                     <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-text-sm text-gray-500">
                       <span>Created: {new Date(project.createdAt).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1">
@@ -291,6 +295,12 @@ const AdminPage: React.FC = () => {
                                 title={image.isHidden ? 'Show image' : 'Hide image'}
                               />
                               <Button
+                                color="secondary"
+                                size="sm"
+                                iconLeading={EditIcon}
+                                title="Edit image"
+                              />
+                              <Button
                                 color="secondary-destructive"
                                 size="sm"
                                 onClick={() => deleteImage(project.id, image.id)}
@@ -299,6 +309,8 @@ const AdminPage: React.FC = () => {
                               />
                             </div>
                           </div>
+                          
+                          <p className="mb-3 text-text-sm text-gray-600 text-justify">{image.question}</p>
                           
                           <div className="mb-3 flex justify-between text-text-sm text-gray-600">
                             <div className="mb-1 flex items-center gap-1">
