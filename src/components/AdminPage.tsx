@@ -14,6 +14,7 @@ import {
   Users01
 } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
+import AddImageModal from './AddImageModal';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -95,6 +96,19 @@ const AdminPage: React.FC = () => {
   const [projects, setProjects] = useState<ResearchProject[]>(mockProjects);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [addImageModalState, setAddImageModalState] = useState<{ isOpen: boolean; projectId: string; projectName: string }>({
+    isOpen: false,
+    projectId: '',
+    projectName: ''
+  });
+
+  const openAddImageModal = (projectId: string, projectName: string) => {
+    setAddImageModalState({ isOpen: true, projectId, projectName });
+  };
+
+  const closeAddImageModal = () => {
+    setAddImageModalState({ isOpen: false, projectId: '', projectName: '' });
+  };
 
   const toggleProjectVisibility = (projectId: string) => {
     setProjects(prev => prev.map(project => 
@@ -240,7 +254,7 @@ const AdminPage: React.FC = () => {
                 <div className="px-6 py-5">
                   <div className="mb-5 flex items-center justify-between">
                     <h3 className="text-text-lg font-semibold text-gray-900">Images</h3>
-                    <Button color="primary" size="sm" iconLeading={PlusIcon}>
+                    <Button color="primary" size="sm" iconLeading={PlusIcon} onClick={() => openAddImageModal(project.id, project.name)}>
                       Add Image
                     </Button>
                   </div>
@@ -341,6 +355,14 @@ const AdminPage: React.FC = () => {
       <CreateProjectModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
+      />
+
+      {/* Add Image Modal */}
+      <AddImageModal
+        isOpen={addImageModalState.isOpen}
+        onClose={closeAddImageModal}
+        projectId={addImageModalState.projectId}
+        projectName={addImageModalState.projectName}
       />
     </div>
   );
