@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from "react-router-dom";
 import { Button } from '@untitledui/base/buttons/button';
 
 // Icon components
@@ -67,7 +68,7 @@ interface ResearchImage {
   id: string;
   name: string;
   url: string;
-  questions: string[];
+  addedAt: string;
   isHidden: boolean;
   reviewCount: number;
 }
@@ -94,7 +95,7 @@ const mockProjects: ResearchProject[] = [
         id: 'img-1',
         name: 'Homepage Design',
         url: '/images/homepage.png',
-        questions: ['How intuitive is the navigation?', 'What catches your attention first?'],
+        addedAt: '2024-01-15',
         isHidden: false,
         reviewCount: 12
       },
@@ -102,7 +103,7 @@ const mockProjects: ResearchProject[] = [
         id: 'img-2',
         name: 'Profile Page',
         url: '/images/profile.png',
-        questions: ['Is the profile information clear?'],
+        addedAt: '2024-01-16',
         isHidden: false,
         reviewCount: 8
       }
@@ -119,7 +120,7 @@ const mockProjects: ResearchProject[] = [
         id: 'img-3',
         name: 'Cart Summary',
         url: '/images/cart.png',
-        questions: ['Is the pricing information clear?', 'Are there any confusing elements?'],
+        addedAt: '2024-02-01',
         isHidden: true,
         reviewCount: 15
       }
@@ -179,10 +180,10 @@ const AdminPage: React.FC = () => {
     alert('Review link copied to clipboard!');
   };
 
-  const copyAnalysisLink = (imageId: string) => {
-    const link = `${window.location.origin}/analysis/${imageId}`;
-    navigator.clipboard.writeText(link);
-    alert('Analysis link copied to clipboard!');
+  const navigate = useNavigate();
+  const gotoReport = (imageId: string) => {
+    const link = `${window.location.origin}/report/${imageId}`;
+    navigate(link);
   };
 
   const toggleProjectExpansion = (projectId: string) => {
@@ -295,7 +296,7 @@ const AdminPage: React.FC = () => {
                           }`}
                         >
                           <div className="mb-3 flex items-start justify-between">
-                            <div className="min-w-0 flex-1">
+                            <div className="min-w-0 flex-1 text-left">
                               <h4 className="text-text-sm font-semibold text-gray-900">{image.name}</h4>
                               {image.isHidden && (
                                 <span className="mt-1 inline-flex items-center rounded-full bg-warning-50 px-2 py-1 text-text-xs font-medium text-warning-700">
@@ -321,12 +322,12 @@ const AdminPage: React.FC = () => {
                             </div>
                           </div>
                           
-                          <div className="mb-3 text-text-sm text-gray-600">
+                          <div className="mb-3 flex justify-between text-text-sm text-gray-600">
                             <div className="mb-1 flex items-center gap-1">
                               <UsersIcon className="h-3.5 w-3.5" />
                               {image.reviewCount} reviews
                             </div>
-                            <div>Questions: {image.questions.length}</div>
+                            <div>Added at: {image.addedAt}</div>
                           </div>
                           
                           <div className="flex gap-2">
@@ -337,16 +338,15 @@ const AdminPage: React.FC = () => {
                               iconLeading={CopyIcon}
                               className="flex-1"
                             >
-                              Review Link
+                              Get Review Link
                             </Button>
                             <Button
                               color="secondary"
                               size="sm"
-                              onClick={() => copyAnalysisLink(image.id)}
-                              iconLeading={CopyIcon}
+                              onClick={() => gotoReport(image.id)}
                               className="flex-1"
                             >
-                              Report
+                              Go to Report
                             </Button>
                           </div>
                         </div>
