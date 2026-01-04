@@ -13,6 +13,7 @@ import {
   Image01,
   Users01
 } from '@untitledui/icons';
+import CreateProjectModal from './CreateProjectModal';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -93,6 +94,7 @@ const mockProjects: ResearchProject[] = [
 const AdminPage: React.FC = () => {
   const [projects, setProjects] = useState<ResearchProject[]>(mockProjects);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const toggleProjectVisibility = (projectId: string) => {
     setProjects(prev => prev.map(project => 
@@ -161,7 +163,7 @@ const AdminPage: React.FC = () => {
             <h1 className="text-display-md font-semibold text-gray-900">Research Projects</h1>
             <p className="mt-1 text-text-md text-gray-600">Manage your UX research projects and analyze user feedback</p>
           </div>
-          <Button color="primary" size="md" iconLeading={PlusIcon}>
+          <Button color="primary" size="md" iconLeading={PlusIcon} onClick={() => setIsCreateModalOpen(true)}>
             New Project
           </Button>
         </div>
@@ -328,12 +330,18 @@ const AdminPage: React.FC = () => {
             </div>
             <h3 className="text-text-lg font-semibold text-gray-900">No projects yet</h3>
             <p className="mt-1 text-text-sm text-gray-600">Create your first UX research project to get started</p>
-            <Button color="primary" size="md" iconLeading={PlusIcon} className="mt-4">
+            <Button color="primary" size="md" iconLeading={PlusIcon} className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
               Create Project
             </Button>
           </div>
         )}
       </div>
+
+      {/* Create Project Modal */}
+      <CreateProjectModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+      />
     </div>
   );
 };
