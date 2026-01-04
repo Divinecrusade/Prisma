@@ -15,6 +15,7 @@ import {
 } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
+import EditProjectModal from './EditProjectModal';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -105,6 +106,13 @@ const AdminPage: React.FC = () => {
     projectId: '',
     projectName: ''
   });
+  const [editProjectModalState, setEditProjectModalState] = useState<{
+    isOpen: boolean;
+    project: { id: string; name: string; description: string } | null;
+  }>({
+    isOpen: false,
+    project: null
+  });
 
   const openAddImageModal = (projectId: string, projectName: string) => {
     setAddImageModalState({ isOpen: true, projectId, projectName });
@@ -112,6 +120,17 @@ const AdminPage: React.FC = () => {
 
   const closeAddImageModal = () => {
     setAddImageModalState({ isOpen: false, projectId: '', projectName: '' });
+  };
+
+  const openEditProjectModal = (project: ResearchProject) => {
+    setEditProjectModalState({
+      isOpen: true,
+      project: { id: project.id, name: project.name, description: project.description }
+    });
+  };
+
+  const closeEditProjectModal = () => {
+    setEditProjectModalState({ isOpen: false, project: null });
   };
 
   const toggleProjectVisibility = (projectId: string) => {
@@ -239,6 +258,7 @@ const AdminPage: React.FC = () => {
                     <Button
                       color="secondary"
                       size="sm"
+                      onClick={() => openEditProjectModal(project)}
                       iconLeading={EditIcon}
                       title="Edit project"
                     />
@@ -375,6 +395,13 @@ const AdminPage: React.FC = () => {
         onClose={closeAddImageModal}
         projectId={addImageModalState.projectId}
         projectName={addImageModalState.projectName}
+      />
+
+      {/* Edit Project Modal */}
+      <EditProjectModal
+        isOpen={editProjectModalState.isOpen}
+        onClose={closeEditProjectModal}
+        project={editProjectModalState.project}
       />
     </div>
   );
