@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { XClose } from '@untitledui/icons';
+import { projectsApi, type ResearchProject } from '../api';
 
 interface EditProjectModalProps {
   isOpen: boolean;
@@ -10,14 +11,16 @@ interface EditProjectModalProps {
     name: string;
     description: string;
   } | null;
+  onProjectUpdated?: (project: ResearchProject) => void;
 }
 
 interface FormErrors {
   name?: string;
   description?: string;
+  submit?: string;
 }
 
-const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, project }) => {
+const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, project, onProjectUpdated }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [errors, setErrors] = useState<FormErrors>({});
@@ -26,7 +29,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
   // Populate form when project changes
   useEffect(() => {
     if (project) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(project.name);
       setDescription(project.description);
     }
@@ -55,27 +57,28 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validate() || !project) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
-    const updateData = {
-      id: project.id,
-      name: name.trim(),
-      description: description.trim(),
-    };
-
-    console.log('=== Update Project Data (JSON) ===');
-    console.log(JSON.stringify(updateData, null, 2));
-    console.log('==================================');
-
-    // Reload page after short delay to show the console output
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    try {
+      const updatedProject = await projectsApi.update(project.id, {
+        name: name.trim(),
+        description: description.trim(),
+      });
+      
+      onProjectUpdated?.(updatedProject);
+      handleClose();
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      setErrors({ submit: 'Failed to update project. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -113,6 +116,13 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
           {/* Body */}
           <form onSubmit={handleSubmit}>
             <div className="space-y-5 px-6 py-5">
+              {/* Submit error */}
+              {errors.submit && (
+                <div className="rounded-lg bg-error-50 p-3 text-text-sm text-error-700">
+                  {errors.submit}
+                </div>
+              )}
+
               {/* Name field */}
               <div>
                 <label htmlFor="project-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
@@ -144,8 +154,8 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
                   id="project-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter project description"
-                  rows={3}
+                  placeholder="Describe your research project..."
+                  rows={4}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.description 
                       ? 'border-error-300 focus:border-error-300 focus:ring-error-100' 

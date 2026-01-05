@@ -11,8 +11,7 @@ import {
   Trash01,
   Copy01,
   Image01,
-  Users01,
-  Loading02
+  Users01
 } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
@@ -115,11 +114,34 @@ const AdminPage: React.FC = () => {
     setProjects(prev => [newProject, ...prev]);
   };
 
+  // Handle project updated
+  const handleProjectUpdated = (updatedProject: ResearchProject) => {
+    setProjects(prev => prev.map(project => 
+      project.id === updatedProject.id 
+        ? { ...project, name: updatedProject.name, description: updatedProject.description }
+        : project
+    ));
+  };
+
   // Handle new image added
   const handleImageAdded = (newImage: ResearchImage) => {
     setProjects(prev => prev.map(project => 
       project.id === addImageModalState.projectId 
         ? { ...project, images: [...project.images, newImage] }
+        : project
+    ));
+  };
+
+  // Handle image updated
+  const handleImageUpdated = (updatedImage: ResearchImage) => {
+    setProjects(prev => prev.map(project => 
+      project.id === editImageModalState.projectId 
+        ? {
+            ...project,
+            images: project.images.map(image =>
+              image.id === updatedImage.id ? updatedImage : image
+            )
+          }
         : project
     ));
   };
@@ -207,8 +229,8 @@ const AdminPage: React.FC = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-25">
         <div className="text-center">
-          <Loading02 className="mx-auto h-8 w-8 animate-spin text-brand-600" />
-          <p className="mt-2 text-text-md text-gray-600">Loading projects...</p>
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-brand-600" />
+          <p className="mt-3 text-text-md text-gray-600">Loading projects...</p>
         </div>
       </div>
     );
@@ -355,6 +377,17 @@ const AdminPage: React.FC = () => {
                             image.isHidden ? 'opacity-60' : ''
                           }`}
                         >
+                          {/* Image thumbnail */}
+                          {image.url && (
+                            <div className="mb-3 overflow-hidden rounded-lg">
+                              <img
+                                src={image.url}
+                                alt={image.name}
+                                className="h-32 w-full object-cover"
+                              />
+                            </div>
+                          )}
+
                           <div className="mb-3 flex items-start justify-between">
                             <div className="min-w-0 flex-1">
                               <h4 className="truncate text-text-sm font-medium text-gray-900">{image.name}</h4>
@@ -463,6 +496,7 @@ const AdminPage: React.FC = () => {
         isOpen={editProjectModalState.isOpen}
         onClose={closeEditProjectModal}
         project={editProjectModalState.project}
+        onProjectUpdated={handleProjectUpdated}
       />
 
       {/* Edit Image Modal */}
@@ -471,6 +505,7 @@ const AdminPage: React.FC = () => {
         onClose={closeEditImageModal}
         image={editImageModalState.image}
         projectId={editImageModalState.projectId}
+        onImageUpdated={handleImageUpdated}
       />
     </div>
   );

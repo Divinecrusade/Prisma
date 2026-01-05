@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { XClose, UploadCloud01, Trash01 } from '@untitledui/icons';
+import { imagesApi, type ResearchImage } from '../api';
 
 interface EditImageModalProps {
   isOpen: boolean;
@@ -12,15 +13,17 @@ interface EditImageModalProps {
     url: string;
   } | null;
   projectId: string;
+  onImageUpdated?: (image: ResearchImage) => void;
 }
 
 interface FormErrors {
   name?: string;
   question?: string;
   file?: string;
+  submit?: string;
 }
 
-const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image, projectId }) => {
+const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image, projectId, onImageUpdated }) => {
   const [name, setName] = useState('');
   const [question, setQuestion] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -35,7 +38,6 @@ const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image,
   // Populate form when image changes
   useEffect(() => {
     if (image) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setName(image.name);
       setQuestion(image.question);
       setCurrentImageUrl(image.url);
@@ -142,42 +144,23 @@ const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image,
     if (!validate() || !image) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
-    // Prepare update data
-    const updateData = {
-      id: image.id,
-      projectId,
-      name: name.trim(),
-      question: question.trim(),
-      hasNewImage: !!file,
-    };
-
-    console.log('=== Update Image Data (JSON metadata) ===');
-    console.log(JSON.stringify(updateData, null, 2));
-    
-    if (file) {
-      console.log('');
-      console.log('=== New File Info ===');
-      console.log({
-        fileName: file.name,
-        fileType: file.type,
-        fileSize: `${(file.size / 1024).toFixed(2)} KB`,
+    try {
+      const updatedImage = await imagesApi.update(image.id, {
+        name: name.trim(),
+        question: question.trim(),
+        file: file ?? undefined,
       });
-      console.log('');
-      console.log('=== FormData would contain ===');
-      console.log('- metadata: JSON string with update data');
-      console.log('- image: File blob (new image)');
-    } else {
-      console.log('');
-      console.log('=== No new image file ===');
-      console.log('Only metadata will be updated');
+      
+      onImageUpdated?.(updatedImage);
+      handleClose();
+    } catch (error) {
+      console.error('Failed to update image:', error);
+      setErrors({ submit: 'Failed to update image. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
     }
-    console.log('=========================================');
-
-    // Reload page after short delay to show the console output
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
   };
 
   const handleClose = () => {
@@ -217,6 +200,13 @@ const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image,
           {/* Body */}
           <form onSubmit={handleSubmit}>
             <div className="space-y-5 px-6 py-5">
+              {/* Submit error */}
+              {errors.submit && (
+                <div className="rounded-lg bg-error-50 p-3 text-text-sm text-error-700">
+                  {errors.submit}
+                </div>
+              )}
+
               {/* Name field */}
               <div>
                 <label htmlFor="image-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
@@ -242,13 +232,13 @@ const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image,
               {/* Question field */}
               <div>
                 <label htmlFor="image-question" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Question for Reviewers <span className="text-error-500">*</span>
+                  Question <span className="text-error-500">*</span>
                 </label>
                 <textarea
                   id="image-question"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="What would you like reviewers to evaluate?"
+                  placeholder="What question should reviewers answer about this image?"
                   rows={3}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.question 
@@ -261,64 +251,56 @@ const EditImageModal: React.FC<EditImageModalProps> = ({ isOpen, onClose, image,
                 )}
               </div>
 
-              {/* Current image preview */}
-              <div>
-                <label className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Current Image
-                </label>
-                <div className="rounded-lg border border-gray-200 p-3">
-                  <div className="flex items-center gap-3">
+              {/* Current Image */}
+              {currentImageUrl && !preview && (
+                <div>
+                  <label className="mb-1.5 block text-text-sm font-medium text-gray-700">
+                    Current Image
+                  </label>
+                  <div className="rounded-lg border border-gray-200 p-3">
                     <img
-                      src={currentImageUrl || ''}
+                      src={currentImageUrl}
                       alt="Current"
-                      className="h-20 w-20 rounded-lg border border-gray-100 bg-gray-50 object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHZpZXdCb3g9IjAgMCA4MCA4MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iODAiIGhlaWdodD0iODAiIGZpbGw9IiNGMkYyRjIiLz48cGF0aCBkPSJNMzIgMzZDMzIgMzMuNzkgMzMuNzkgMzIgMzYgMzJINDRDNDYuMjEgMzIgNDggMzMuNzkgNDggMzZWNDRDNDggNDYuMjEgNDYuMjEgNDggNDQgNDhIMzZDMzMuNzkgNDggMzIgNDYuMjEgMzIgNDRWMzZaIiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTM2IDQwSDM2LjAxIiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PHBhdGggZD0iTTQ4IDQ0TDQyIDM4TDM2IDQ0IiBzdHJva2U9IiM5OTk5OTkiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+';
-                      }}
+                      className="h-32 w-full rounded-lg object-contain"
                     />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-text-sm font-medium text-gray-900">Currently uploaded</p>
-                      <p className="truncate text-text-xs text-gray-500">{currentImageUrl}</p>
-                    </div>
                   </div>
                 </div>
-              </div>
+              )}
 
-              {/* New file upload */}
+              {/* File upload */}
               <div>
                 <label className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Replace Image <span className="text-text-xs text-gray-400">(optional)</span>
+                  Replace Image (optional)
                 </label>
                 
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleInputChange}
+                  className="hidden"
+                />
+
                 {!preview ? (
                   <div
+                    onClick={() => fileInputRef.current?.click()}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
                     className={`cursor-pointer rounded-lg border-2 border-dashed p-4 text-center transition-colors ${
-                      isDragOver
-                        ? 'border-brand-500 bg-brand-50'
-                        : errors.file
-                        ? 'border-error-300 bg-error-25'
-                        : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                      isDragOver 
+                        ? 'border-brand-500 bg-brand-50' 
+                        : errors.file 
+                          ? 'border-error-300 bg-error-25' 
+                          : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                     }`}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/gif,image/webp"
-                      onChange={handleInputChange}
-                      className="hidden"
-                    />
-                    <div className="mx-auto mb-2 flex h-8 w-8 items-center justify-center rounded-full bg-gray-100">
-                      <UploadCloud01 className="h-4 w-4 text-gray-600" />
-                    </div>
-                    <p className="text-text-sm text-gray-600">
-                      <span className="font-semibold text-brand-600">Click to upload</span> or drag and drop
+                    <UploadCloud01 className="mx-auto h-8 w-8 text-gray-400" />
+                    <p className="mt-2 text-text-sm font-medium text-gray-700">
+                      Click to upload or drag and drop
                     </p>
-                    <p className="mt-0.5 text-text-xs text-gray-500">
-                      PNG, JPG, GIF or WebP (max. 10MB)
+                    <p className="mt-1 text-text-xs text-gray-500">
+                      PNG, JPG, GIF, WebP (max. 10MB)
                     </p>
                   </div>
                 ) : (
