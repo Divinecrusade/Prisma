@@ -80,7 +80,8 @@ const AnnotationHandler: React.FC<{
   uniqueId: string;
   imageHref: string;
   textContent: string;
-}> = ({ uniqueId, imageHref, textContent }) => {
+  imageDimensions: ImageDimensions;
+}> = ({ uniqueId, imageHref, textContent, imageDimensions }) => {
   const annotations = useAnnotations();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -90,12 +91,49 @@ const AnnotationHandler: React.FC<{
     setIsSubmitting(true);
     setError(null);
     
+    // Transform annotations: normalize coordinates to percentages (0-1) and rename bodies to body
+    // Annotorious stores coordinates relative to NATURAL image dimensions
+    const naturalWidth = imageDimensions.naturalWidth || 1;
+    const naturalHeight = imageDimensions.naturalHeight || 1;
+    
+    const transformedAnnotations = annotations.map((ann: any) => {
+      const geometry = ann.target?.selector?.geometry;
+      const bounds = geometry?.bounds;
+      
+      // Normalize bounds to percentages (0-1) based on natural image size
+      const normalizedBounds = bounds ? {
+        minX: bounds.minX / naturalWidth,
+        minY: bounds.minY / naturalHeight,
+        maxX: bounds.maxX / naturalWidth,
+        maxY: bounds.maxY / naturalHeight,
+      } : null;
+      
+      return {
+        ...ann,
+        // Rename 'bodies' to 'body' for backend compatibility
+        body: ann.bodies || ann.body || [],
+        target: {
+          ...ann.target,
+          selector: {
+            ...ann.target?.selector,
+            geometry: {
+              ...geometry,
+              bounds: normalizedBounds,
+            }
+          }
+        }
+      };
+    });
+    
     const submissionData = {
       id: uniqueId,
       image_href: imageHref,
       text_content: textContent,
-      annotations: annotations as unknown[]
+      annotations: transformedAnnotations
     };
+
+    console.log('Image dimensions:', { naturalWidth, naturalHeight });
+    console.log('Submission data:', JSON.stringify(submissionData, null, 2));
 
     try {
       const result = await annotationsApi.submit(submissionData);
@@ -237,6 +275,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
               uniqueId={uniqueId}
               imageHref={imageHref}
               textContent={textContent}
+              imageDimensions={imageDimensions}
             />
           </div>
 

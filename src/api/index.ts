@@ -208,3 +208,79 @@ export const annotationsApi = {
     return handleResponse(response);
   },
 };
+
+// Report API response types
+interface ApiAnnotation {
+  id: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  text: string;
+  sessionId: string;
+  createdAt: string;
+}
+
+interface ApiReportData {
+  uniqueId: string;
+  imageName: string;
+  question: string;
+  imageUrl: string;
+  annotations: ApiAnnotation[];
+}
+
+// Frontend report types
+export interface ReportAnnotation {
+  id: string;
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  text: string;
+  timestamp: string;
+  sessionId: string;
+}
+
+export interface ReportData {
+  uniqueId: string;
+  imageHref: string;
+  textContent: string;
+  imageName: string;
+  annotations: ReportAnnotation[];
+  submittedAt: string;
+}
+
+// Report API
+export const reportApi = {
+  async getReportData(imageId: string): Promise<ReportData> {
+    const response = await fetch(`${API_BASE_URL}/report/${imageId}/`);
+    const data = await handleResponse<ApiReportData>(response);
+    
+    // Transform to frontend format
+    const annotations: ReportAnnotation[] = data.annotations.map(ann => ({
+      id: ann.id,
+      left: ann.left,
+      top: ann.top,
+      width: ann.width,
+      height: ann.height,
+      text: ann.text,
+      timestamp: ann.createdAt,
+      sessionId: ann.sessionId,
+    }));
+
+    // Get the latest annotation timestamp as submittedAt
+    const latestTimestamp = annotations.length > 0
+      ? annotations.reduce((latest, ann) => 
+          ann.timestamp > latest ? ann.timestamp : latest, annotations[0].timestamp)
+      : new Date().toISOString();
+
+    return {
+      uniqueId: data.uniqueId,
+      imageHref: data.imageUrl,
+      textContent: data.question,
+      imageName: data.imageName,
+      annotations,
+      submittedAt: latestTimestamp,
+    };
+  },
+};

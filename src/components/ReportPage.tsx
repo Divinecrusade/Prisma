@@ -1,24 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { Eye, EyeOff } from '@untitledui/icons';
-
-interface AnnotationData {
-  id: string;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  text: string;
-  timestamp: string;
-}
-
-interface ReportData {
-  uniqueId: string;
-  imageHref: string;
-  textContent: string;
-  annotations: AnnotationData[];
-  submittedAt: string;
-}
+import { reportApi, type ReportData, type ReportAnnotation } from '../api';
 
 interface ReportPageProps {
   uniqueId: string;
@@ -29,11 +12,17 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const [canvasHeight, setCanvasHeight] = useState(400);
   const overlayRef = useRef<HTMLDivElement>(null);
   const [reportData, setReportData] = useState<ReportData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showAnnotations, setShowAnnotations] = useState(true);
   const [densityData, setDensityData] = useState<number[][]>([]);
   const [hoveredAnnotation, setHoveredAnnotation] = useState<string | null>(null);
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 600, height: 400 });
+
+  // Max canvas width
+  const MAX_CANVAS_WIDTH = 800;
 
   const vertexShaderSource = `
     attribute vec2 a_position;
@@ -77,91 +66,42 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     }
   `;
 
+  // Fetch report data from API
   useEffect(() => {
-    const mockData: ReportData = {
-      uniqueId: uniqueId,
-      imageHref: "https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=600&h=400&fit=crop",
-      textContent: "Advanced architectural review with comprehensive annotation density analysis for structural compliance assessment.",
-      annotations: [
-        {
-          id: "ann-1",
-          left: 50,
-          top: 30,
-          width: 120,
-          height: 80,
-          text: "Foundation specifications require structural engineering review for compliance with updated building codes",
-          timestamp: "2025-01-15T10:30:00Z"
-        },
-        {
-          id: "ann-2", 
-          left: 80,
-          top: 50,
-          width: 100,
-          height: 60,
-          text: "Load-bearing capacity calculations indicate potential concerns with proposed material specifications",
-          timestamp: "2025-01-15T10:32:00Z"
-        },
-        {
-          id: "ann-3",
-          left: 150,
-          top: 40,
-          width: 90,
-          height: 70,
-          text: "Building envelope integration requires additional review for thermal performance standards",
-          timestamp: "2025-01-15T10:35:00Z"
-        },
-        {
-          id: "ann-4",
-          left: 200,
-          top: 120,
-          width: 110,
-          height: 85,
-          text: "HVAC system placement conflicts with electrical distribution requirements in this section",
-          timestamp: "2025-01-15T10:38:00Z"
-        },
-        {
-          id: "ann-5",
-          left: 180,
-          top: 140,
-          width: 95,
-          height: 75,
-          text: "Emergency egress pathway dimensions require verification against current accessibility standards",
-          timestamp: "2025-01-15T10:40:00Z"
-        },
-        {
-          id: "ann-6",
-          left: 70,
-          top: 60,
-          width: 130,
-          height: 90,
-          text: "Structural beam specifications require professional engineer certification for project approval",
-          timestamp: "2025-01-15T10:42:00Z"
-        },
-        {
-          id: "ann-7",
-          left: 320,
-          top: 200,
-          width: 140,
-          height: 70,
-          text: "Fire suppression system layout requires coordination with ceiling height restrictions",
-          timestamp: "2025-01-15T10:44:00Z"
-        },
-        {
-          id: "ann-8",
-          left: 450,
-          top: 50,
-          width: 100,
-          height: 100,
-          text: "Seismic bracing requirements need verification against current regional standards",
-          timestamp: "2025-01-15T10:46:00Z"
+    const fetchReportData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await reportApi.getReportData(uniqueId);
+        console.log('Report data received:', data);
+        console.log('First annotation (if any):', data.annotations[0]);
+        setReportData(data);
+        
+        // Load image to get dimensions and set canvas aspect ratio
+        if (data.imageHref) {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            const canvasWidth = Math.min(MAX_CANVAS_WIDTH, img.naturalWidth);
+            const canvasHeight = Math.round(canvasWidth / aspectRatio);
+            setCanvasDimensions({ width: canvasWidth, height: canvasHeight });
+          };
+          img.onerror = () => {
+            // Fallback to default dimensions
+            setCanvasDimensions({ width: 600, height: 400 });
+          };
+          img.src = data.imageHref;
         }
-      ],
-      submittedAt: "2025-01-15T10:45:00Z"
+      } catch (err) {
+        console.error('Failed to fetch report data:', err);
+        setError('Failed to load report data. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setTimeout(() => {
-      setReportData(mockData);
-    }, 300);
+    fetchReportData();
   }, [uniqueId]);
 
   const createShader = (gl: WebGLRenderingContext, type: number, source: string): WebGLShader | null => {
@@ -205,6 +145,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const loadImageTexture = (gl: WebGLRenderingContext, imageUrl: string): Promise<WebGLTexture> => {
     return new Promise((resolve, reject) => {
       const image = new Image();
+      image.crossOrigin = 'anonymous';
       
       const createFallbackTexture = () => {
         console.log('Creating fallback texture');
@@ -226,16 +167,12 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           
           ctx.fillStyle = '#333';
           ctx.font = '20px Arial';
-          ctx.fillText('Sample Architectural Plan', 150, 300);
-          ctx.font = '14px Arial';
-          ctx.fillText('Foundation Section', 60, 120);
-          ctx.fillText('HVAC Zone', 270, 200);
-          ctx.fillText('Electrical', 420, 160);
+          ctx.fillText('Sample Image', 220, 220);
         }
         
         const texture = gl.createTexture();
         if (!texture) {
-          reject(new Error('Failed to create fallback texture'));
+          reject(new Error('Failed to create texture'));
           return;
         }
         
@@ -250,7 +187,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       };
       
       image.onload = () => {
-        console.log('Image loaded successfully');
         const texture = gl.createTexture();
         if (!texture) {
           reject(new Error('Failed to create texture'));
@@ -268,23 +204,20 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       };
       
       image.onerror = () => {
-        console.warn('Failed to load external image, using fallback');
+        console.warn('Failed to load image, using fallback');
         createFallbackTexture();
       };
       
-      image.crossOrigin = 'anonymous';
       image.src = imageUrl;
-      
-      setTimeout(() => {
-        if (!image.complete) {
-          console.warn('Image loading timeout, using fallback');
-          createFallbackTexture();
-        }
-      }, 3000);
     });
   };
 
-  const createDensityTexture = (gl: WebGLRenderingContext, annotations: AnnotationData[], width: number, height: number): WebGLTexture | null => {
+  const createDensityTexture = (
+    gl: WebGLRenderingContext, 
+    annotations: ReportAnnotation[], 
+    width: number, 
+    height: number
+  ): WebGLTexture | null => {
     const gridSize = 10;
     const textureWidth = Math.ceil(width / gridSize);
     const textureHeight = Math.ceil(height / gridSize);
@@ -298,10 +231,16 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
         let density = 0;
         
         for (const annotation of annotations) {
-          if (pixelX < annotation.left + annotation.width &&
-              pixelX + gridSize > annotation.left &&
-              pixelY < annotation.top + annotation.height &&
-              pixelY + gridSize > annotation.top) {
+          // Coordinates are stored as percentages (0-1), scale to canvas size
+          const annLeft = annotation.left * width;
+          const annTop = annotation.top * height;
+          const annWidth = annotation.width * width;
+          const annHeight = annotation.height * height;
+          
+          if (pixelX < annLeft + annWidth &&
+              pixelX + gridSize > annLeft &&
+              pixelY < annTop + annHeight &&
+              pixelY + gridSize > annTop) {
             density++;
           }
         }
@@ -329,17 +268,23 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     return texture;
   };
 
-  const calculateAnnotationDensity = (annotations: AnnotationData[], canvasWidth: number, canvasHeight: number): number[][] => {
+  const calculateAnnotationDensity = (annotations: ReportAnnotation[], canvasWidth: number, canvasHeight: number): number[][] => {
     const gridSize = 20;
     const gridWidth = Math.ceil(canvasWidth / gridSize);
     const gridHeight = Math.ceil(canvasHeight / gridSize);
     const density = Array(gridHeight).fill(null).map(() => Array(gridWidth).fill(0));
     
     annotations.forEach(annotation => {
-      const startX = Math.floor(annotation.left / gridSize);
-      const endX = Math.ceil((annotation.left + annotation.width) / gridSize);
-      const startY = Math.floor(annotation.top / gridSize);
-      const endY = Math.ceil((annotation.top + annotation.height) / gridSize);
+      // Coordinates are stored as percentages (0-1), scale to canvas size
+      const annLeft = annotation.left * canvasWidth;
+      const annTop = annotation.top * canvasHeight;
+      const annWidth = annotation.width * canvasWidth;
+      const annHeight = annotation.height * canvasHeight;
+      
+      const startX = Math.floor(annLeft / gridSize);
+      const endX = Math.ceil((annLeft + annWidth) / gridSize);
+      const startY = Math.floor(annTop / gridSize);
+      const endY = Math.ceil((annTop + annHeight) / gridSize);
       
       for (let y = Math.max(0, startY); y < Math.min(gridHeight, endY); y++) {
         for (let x = Math.max(0, startX); x < Math.min(gridWidth, endX); x++) {
@@ -416,6 +361,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       
       gl.activeTexture(gl.TEXTURE1);
       gl.bindTexture(gl.TEXTURE_2D, densityTexture);
+
       const densityLocation = gl.getUniformLocation(program, 'u_densityTexture');
       gl.uniform1i(densityLocation, 1);
 
@@ -435,7 +381,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       
       requestAnimationFrame(() => {
         if (canvasRef.current) {
-          setCanvasHeight(canvasRef.current.clientHeight || 400);
+          setCanvasHeight(canvasRef.current.clientHeight || canvasDimensions.height);
         }
       });
     } catch (error) {
@@ -447,17 +393,19 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     if (!overlayRef.current || !reportData) return;
     
     const rect = overlayRef.current.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 600;
-    const y = ((event.clientY - rect.top) / rect.height) * 400;
+    // Get mouse position as percentage (0-1)
+    const xPercent = (event.clientX - rect.left) / rect.width;
+    const yPercent = (event.clientY - rect.top) / rect.height;
     
-    setMousePosition({ x, y });
+    setMousePosition({ x: event.clientX - rect.left, y: event.clientY - rect.top });
     
     let foundAnnotation: string | null = null;
     for (const annotation of reportData.annotations) {
-      if (x >= annotation.left && 
-          x <= annotation.left + annotation.width &&
-          y >= annotation.top && 
-          y <= annotation.top + annotation.height) {
+      // Coordinates are stored as percentages (0-1)
+      if (xPercent >= annotation.left && 
+          xPercent <= annotation.left + annotation.width &&
+          yPercent >= annotation.top && 
+          yPercent <= annotation.top + annotation.height) {
         foundAnnotation = annotation.id;
         break;
       }
@@ -470,14 +418,16 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     if (!overlayRef.current || !reportData) return;
     
     const rect = overlayRef.current.getBoundingClientRect();
-    const x = ((event.clientX - rect.left) / rect.width) * 600;
-    const y = ((event.clientY - rect.top) / rect.height) * 400;
+    // Get click position as percentage (0-1)
+    const xPercent = (event.clientX - rect.left) / rect.width;
+    const yPercent = (event.clientY - rect.top) / rect.height;
     
     for (const annotation of reportData.annotations) {
-      if (x >= annotation.left && 
-          x <= annotation.left + annotation.width &&
-          y >= annotation.top && 
-          y <= annotation.top + annotation.height) {
+      // Coordinates are stored as percentages (0-1)
+      if (xPercent >= annotation.left && 
+          xPercent <= annotation.left + annotation.width &&
+          yPercent >= annotation.top && 
+          yPercent <= annotation.top + annotation.height) {
         setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id);
         return;
       }
@@ -487,25 +437,26 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   }, [reportData, selectedAnnotation]);
 
   useEffect(() => {
-    if (reportData) {
+    if (reportData && canvasDimensions.width > 0) {
       renderVisualization();
     }
-  }, [reportData]);
+  }, [reportData, canvasDimensions]);
 
   useEffect(() => {
     const handleResize = () => {
       requestAnimationFrame(() => {
         if (canvasRef.current) {
-          setCanvasHeight(canvasRef.current.clientHeight || 400);
+          setCanvasHeight(canvasRef.current.clientHeight || canvasDimensions.height);
         }
       });
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  }, [canvasDimensions.height]);
 
-  if (!reportData) {
+  // Loading state
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-secondary py-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -519,6 +470,25 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
         </div>
       </div>
     );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-secondary">
+        <div className="text-center">
+          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Error</h1>
+          <p className="mb-4 text-gray-600">{error}</p>
+          <Button color="primary" size="md" onClick={() => window.location.reload()}>
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!reportData) {
+    return null;
   }
 
   const getDensityStatistics = () => {
@@ -573,9 +543,12 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
         <div className="overflow-hidden rounded-xl bg-primary shadow-sm">
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-6">
-            <h1 className="text-display-sm font-semibold text-primary">
-              Advanced Annotation Analysis - {reportData.uniqueId}
-            </h1>
+            <div>
+              <h1 className="text-display-sm font-semibold text-primary">
+                Annotation Analysis - {reportData.imageName}
+              </h1>
+              <p className="mt-1 text-text-sm text-gray-600">{reportData.textContent}</p>
+            </div>
             <Button
               color={showAnnotations ? 'primary' : 'secondary'}
               size="sm"
@@ -594,8 +567,8 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                 <div className="relative overflow-hidden rounded-lg border border-gray-200 bg-gray-50">
                   <canvas
                     ref={canvasRef}
-                    width={600}
-                    height={400}
+                    width={canvasDimensions.width}
+                    height={canvasDimensions.height}
                     className="block h-auto w-full"
                   />
                   
@@ -612,28 +585,29 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                           key={annotation.id}
                           className="absolute border-2 transition-all duration-200"
                           style={{
-                            left: `${(annotation.left / 600) * 100}%`,
-                            top: `${(annotation.top / 400) * 100}%`,
-                            width: `${(annotation.width / 600) * 100}%`,
-                            height: `${(annotation.height / 400) * 100}%`,
+                            // Coordinates are stored as percentages (0-1)
+                            left: `${annotation.left * 100}%`,
+                            top: `${annotation.top * 100}%`,
+                            width: `${annotation.width * 100}%`,
+                            height: `${annotation.height * 100}%`,
                             backgroundColor: getAnnotationColor(annotation.id, index),
                             borderColor: selectedAnnotation === annotation.id 
                               ? 'rgb(59, 130, 246)' 
                               : hoveredAnnotation === annotation.id 
                                 ? 'rgb(34, 197, 94)'
                                 : 'transparent',
-                            borderStyle: selectedAnnotation === annotation.id || hoveredAnnotation === annotation.id
-                              ? 'solid'
-                              : 'dashed',
-                            borderWidth: selectedAnnotation === annotation.id ? '3px' : '2px',
-                            zIndex: selectedAnnotation === annotation.id ? 20 : hoveredAnnotation === annotation.id ? 10 : 1
-                          }}
-                        >
-                          <div className="absolute -top-6 left-0 rounded bg-gray-900 px-2 py-1 text-xs text-white">
-                            {index + 1}
+                              borderStyle: selectedAnnotation === annotation.id || hoveredAnnotation === annotation.id
+                                ? 'solid'
+                                : 'dashed',
+                              borderWidth: selectedAnnotation === annotation.id ? '3px' : '2px',
+                              zIndex: selectedAnnotation === annotation.id ? 20 : hoveredAnnotation === annotation.id ? 10 : 1
+                            }}
+                          >
+                            <div className="absolute -top-6 left-0 rounded bg-gray-900 px-2 py-1 text-xs text-white">
+                              {index + 1}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                   
@@ -648,7 +622,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                       <div className="mb-1 text-xs font-semibold">
                         Annotation #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
                       </div>
-                      <div className="text-xs">{hoveredAnnotationData.text}</div>
+                      <div className="text-xs">{hoveredAnnotationData.text || '(no comment)'}</div>
                       <div className="mt-2 text-xs text-gray-300">
                         Click to {selectedAnnotation === hoveredAnnotationData.id ? 'deselect' : 'select'}
                       </div>
@@ -664,70 +638,76 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                   style={{ height: `${canvasHeight}px` }}
                 >
                   <div className="flex-1 space-y-4 overflow-y-auto">
-                    {reportData.annotations.map((annotation, index) => (
-                      <div
-                        key={annotation.id}
-                        className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                          selectedAnnotation === annotation.id
-                            ? 'border-brand-500 bg-brand-50'
-                            : hoveredAnnotation === annotation.id
-                              ? 'border-success-500 bg-success-50'
-                              : 'border-gray-200 bg-primary hover:border-gray-300'
-                        }`}
-                        onClick={() => setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id)}
-                        onMouseEnter={() => setHoveredAnnotation(annotation.id)}
-                        onMouseLeave={() => setHoveredAnnotation(null)}
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div 
-                            className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                            style={{ backgroundColor: getAnnotationColor(annotation.id, index).replace('0.5)', '1)').replace('0.8)', '1)') }}
-                          >
-                            {index + 1}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-text-sm text-gray-900">
-                              {annotation.text}
-                            </p>
+                    {reportData.annotations.length === 0 ? (
+                      <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
+                        <p className="text-text-sm text-gray-500">No annotations yet</p>
+                      </div>
+                    ) : (
+                      reportData.annotations.map((annotation, index) => (
+                        <div
+                          key={annotation.id}
+                          className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
+                            selectedAnnotation === annotation.id
+                              ? 'border-brand-500 bg-brand-50'
+                              : hoveredAnnotation === annotation.id
+                                ? 'border-success-500 bg-success-50'
+                                : 'border-gray-200 bg-primary hover:border-gray-300'
+                          }`}
+                          onClick={() => setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id)}
+                          onMouseEnter={() => setHoveredAnnotation(annotation.id)}
+                          onMouseLeave={() => setHoveredAnnotation(null)}
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div 
+                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                              style={{ backgroundColor: getAnnotationColor(annotation.id, index).replace('0.5)', '1)').replace('0.8)', '1)') }}
+                            >
+                              {index + 1}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-text-sm text-gray-900">
+                                {annotation.text || '(no comment)'}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* ROW 2: Analysis Insights + Общая информация (full width) */}
+            {/* ROW 2: Analysis Insights + General Info */}
             <div className="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-4">
               {/* Analysis Insights - 3/4 width */}
               <div 
                 className="rounded-lg border border-brand-200 bg-brand-50 p-4 xl:col-span-3"
                 style={{ minHeight: `${minBlockHeight}px` }}
               >
-                  <h3 className="text-text-md font-semibold text-blue-900 mb-3">Analysis Insights</h3>
-                  <div className="grid grid-cols-3 gap-4 text-text-sm h-3/4 items-center">
-                    <div>
-                      <span className="font-medium text-blue-800">Maximum Density:</span>
-                      <div className="text-blue-700">{stats.max} overlapping annotations</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-blue-800">Average Density:</span>
-                      <div className="text-blue-700">{stats.average.toFixed(2)} annotations per region</div>
-                    </div>
-                    <div>
-                      <span className="font-medium text-blue-800">Coverage Area:</span>
-                      <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
-                    </div>
+                <h3 className="text-text-md font-semibold text-blue-900 mb-3">Analysis Insights</h3>
+                <div className="grid grid-cols-3 gap-4 text-text-sm h-3/4 items-center">
+                  <div>
+                    <span className="font-medium text-blue-800">Maximum Density:</span>
+                    <div className="text-blue-700">{stats.max} overlapping annotations</div>
                   </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Average Density:</span>
+                    <div className="text-blue-700">{stats.average.toFixed(2)} annotations per region</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Coverage Area:</span>
+                    <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
+                  </div>
+                </div>
               </div>
 
-              {/* Общая информация - 1/4 width */}
+              {/* General Info - 1/4 width */}
               <div 
                 className="rounded-lg bg-gray-50 p-4 xl:col-span-1"
                 style={{ minHeight: `${minBlockHeight}px` }}
               >
-                <h3 className="mb-3 text-text-md font-semibold text-gray-900">Общая информация</h3>
+                <h3 className="mb-3 text-text-md font-semibold text-gray-900">General Info</h3>
                 <div className="space-y-2 text-text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Total Annotations:</span>
