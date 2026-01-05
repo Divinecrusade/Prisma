@@ -11,13 +11,15 @@ import {
   Trash01,
   Copy01,
   Image01,
-  Users01
+  Users01,
+  LogOut01,
 } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
 import EditImageModal from './EditImageModal';
 import { projectsApi, imagesApi, type ResearchProject, type ResearchImage } from '../api';
+import { useAuth } from '../contexts/AuthContext';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -30,8 +32,11 @@ const TrashIcon = Trash01;
 const CopyIcon = Copy01;
 const ImageIcon = Image01;
 const UsersIcon = Users01;
+const LogOut = LogOut01
 
 const AdminPage: React.FC = () => {
+  const { user, logout } = useAuth();
+
   const [projects, setProjects] = useState<ResearchProject[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -224,6 +229,12 @@ const AdminPage: React.FC = () => {
     setExpandedProject(expandedProject === projectId ? null : projectId);
   };
 
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
+  };
+
+
   // Loading state
   if (isLoading) {
     return (
@@ -257,6 +268,24 @@ const AdminPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-25 px-4 py-6 sm:px-6 lg:px-8">
+      <header className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-900">UX Research Panel</h1>
+          <div className="flex items-center gap-4">
+            {user && (
+              <span className="text-sm text-gray-600">{user.email}</span>
+            )}
+            <Button
+              color="secondary"
+              size="sm"
+              onClick={handleLogout}
+              iconLeading={LogOut}
+            >
+              Logout
+            </Button>
+          </div>
+        </div>
+      </header>
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
