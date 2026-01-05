@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL = 'http://localhost:8888/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888/api';
 
 // Types matching backend serializers
 export interface ApiResearchImage {
@@ -181,6 +181,29 @@ export const imagesApi = {
   async toggleVisibility(id: string): Promise<{ is_hidden: boolean }> {
     const response = await fetch(`${API_BASE_URL}/images/${id}/visibility/`, {
       method: 'PATCH',
+    });
+    return handleResponse(response);
+  },
+
+  async getById(id: string): Promise<ResearchImage> {
+    const response = await fetch(`${API_BASE_URL}/images/${id}/`);
+    const data = await handleResponse<ApiResearchImage>(response);
+    return transformImage(data);
+  },
+};
+
+// Annotations API
+export const annotationsApi = {
+  async submit(data: {
+    id: string;
+    image_href: string;
+    text_content: string;
+    annotations: unknown[];
+  }): Promise<{ message: string; session_id: string; created_count: number; total_count: number }> {
+    const response = await fetch(`${API_BASE_URL}/annotations/submit/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
     });
     return handleResponse(response);
   },

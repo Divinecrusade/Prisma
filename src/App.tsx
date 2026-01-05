@@ -1,15 +1,23 @@
 import { BrowserRouter, Routes, Route, useParams } from 'react-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import ImageReviewPage from './components/ReviewPage';
 import AnnotationReportPage from './components/ReportPage';
 import LoginPage from './components/LoginPage';
 import AdminPage from './components/AdminPage';
+import { imagesApi } from './api';
 import './App.css'
 
 
-// Wrapper component for the review page to access route parameters
+// Wrapper component for the review page to access route parameters and fetch image data
 const ReviewPageWrapper: React.FC = () => {
   const { uniqueId } = useParams<{ uniqueId: string }>();
+  const [imageData, setImageData] = useState<{
+    url: string;
+    question: string;
+    name: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
     document.getElementById('root')?.classList.add('no-center');
@@ -18,15 +26,68 @@ const ReviewPageWrapper: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const fetchImageData = async () => {
+      if (!uniqueId) return;
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await imagesApi.getById(uniqueId);
+        setImageData({
+          url: data.url,
+          question: data.question,
+          name: data.name,
+        });
+      } catch (err) {
+        console.error('Failed to fetch image data:', err);
+        setError('Failed to load image. Please check the URL and try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchImageData();
+  }, [uniqueId]);
+
   if (!uniqueId) {
-    return <div>Error: Missing unique ID</div>;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Invalid Review Request</h1>
+          <p className="text-gray-600">The review identifier is missing or invalid.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading image...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !imageData) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Error</h1>
+          <p className="text-gray-600">{error || 'Image not found'}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
     <ImageReviewPage 
-      imageHref="/Revy.jpg"
+      imageHref={imageData.url}
       uniqueId={uniqueId}
-      textContent="Review this image and add annotations"
+      textContent={imageData.question}
     />
   );
 };

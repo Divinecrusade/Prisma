@@ -10,19 +10,13 @@ import {
 import { Button } from '@untitledui/base/buttons/button';
 import { TextAreaBase } from '@untitledui/base/textarea/textarea';
 import { CheckCircle, Send01, Save01 } from '@untitledui/icons';
+import { annotationsApi } from '../api';
 import '@annotorious/react/annotorious-react.css';
 
 interface ReviewPageProps {
   imageHref: string;
   uniqueId: string;
   textContent: string;
-}
-
-interface AnnotationData {
-  id: string;
-  imageHref: string;
-  textContent: string;
-  annotations: ImageAnnotation[];
 }
 
 interface ImageDimensions {
@@ -90,25 +84,29 @@ const AnnotationHandler: React.FC<{
   const annotations = useAnnotations();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmitAnnotations = async () => {
     setIsSubmitting(true);
+    setError(null);
     
-    const submissionData: AnnotationData = {
+    const submissionData = {
       id: uniqueId,
-      imageHref,
-      textContent,
-      annotations
+      image_href: imageHref,
+      text_content: textContent,
+      annotations: annotations as unknown[]
     };
 
     try {
-      console.log('Sending annotations to server:', JSON.stringify(submissionData, null, 2));
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const result = await annotationsApi.submit(submissionData);
+      console.log('Annotations submitted:', result);
       
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
-    } catch (error) {
-      console.error('Failed to submit annotations:', error);
+    } catch (err) {
+      console.error('Failed to submit annotations:', err);
+      setError('Failed to submit annotations. Please try again.');
+      setTimeout(() => setError(null), 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -129,8 +127,17 @@ const AnnotationHandler: React.FC<{
           </div>
         </div>
       )}
+
+      {/* Error Message */}
+      {error && (
+        <div className="flex flex-1 justify-center">
+          <div className="rounded-md border border-error-300 bg-error-50 px-4 py-2">
+            <p className="text-sm font-medium text-error-700">{error}</p>
+          </div>
+        </div>
+      )}
       
-      {!showSuccessMessage && <div className="flex-1" />}
+      {!showSuccessMessage && !error && <div className="flex-1" />}
 
       {/* Submit Button */}
       <Button
@@ -161,59 +168,49 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     scaledWidth: null,
   });
 
-  // Calculate scaling on mount and window resize
   useEffect(() => {
-    const img = new Image();
-    img.src = imageHref;
-    
     const calculateDimensions = () => {
-      if (img.naturalWidth === 0) return;
+      const img = new Image();
+      img.src = imageHref;
       
-      const headerHeight = 80;
-      const padding = 32;
-      const availableHeight = window.innerHeight - headerHeight - padding;
-      const availableWidth = window.innerWidth - padding;
-      
-      const naturalHeight = img.naturalHeight;
-      const naturalWidth = img.naturalWidth;
-      const aspectRatio = naturalWidth / naturalHeight;
-      
-      const scaleByHeight = availableHeight;
-      const widthIfScaledByHeight = scaleByHeight * aspectRatio;
-      
-      const scaleByWidth = availableWidth;
-      const heightIfScaledByWidth = scaleByWidth / aspectRatio;
-      
-      let finalWidth: number;
-      let finalHeight: number;
-      
-      if (widthIfScaledByHeight <= availableWidth) {
-        finalHeight = scaleByHeight;
-        finalWidth = widthIfScaledByHeight;
-      } else {
-        finalWidth = scaleByWidth;
-        finalHeight = heightIfScaledByWidth;
-      }
-      
-      setImageDimensions({
-        naturalWidth,
-        naturalHeight,
-        scaledHeight: finalHeight,
-        scaledWidth: finalWidth,
-      });
+      img.onload = () => {
+        const container = containerRef.current;
+        if (!container) return;
+        
+        const containerHeight = container.clientHeight;
+        const headerHeight = 80; // Approximate header height
+        const padding = 32; // Top and bottom padding
+        const availableHeight = containerHeight - headerHeight - padding;
+        
+        const containerWidth = container.clientWidth - padding;
+        
+        const aspectRatio = img.naturalWidth / img.naturalHeight;
+        
+        let scaledHeight = availableHeight;
+        let scaledWidth = scaledHeight * aspectRatio;
+        
+        if (scaledWidth > containerWidth) {
+          scaledWidth = containerWidth;
+          scaledHeight = scaledWidth / aspectRatio;
+        }
+        
+        setImageDimensions({
+          naturalWidth: img.naturalWidth,
+          naturalHeight: img.naturalHeight,
+          scaledHeight,
+          scaledWidth,
+        });
+      };
     };
 
-    img.onload = calculateDimensions;
+    calculateDimensions();
     window.addEventListener('resize', calculateDimensions);
     
-    if (img.complete) {
-      calculateDimensions();
-    }
-
     return () => window.removeEventListener('resize', calculateDimensions);
   }, [imageHref]);
 
-  const contentWidth = imageDimensions.scaledWidth ? `${imageDimensions.scaledWidth}px` : 'auto';
+  const contentWidth = imageDimensions.scaledWidth 
+    ? `${imageDimensions.scaledWidth}px` : 'auto';
 
   return (
     <div className="bg-secondary flex h-screen flex-col overflow-hidden">
