@@ -1,21 +1,24 @@
 import React, { useState, useRef, type DragEvent, type ChangeEvent } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { XClose, UploadCloud01, Trash01 } from '@untitledui/icons';
+import { imagesApi, type ResearchImage } from '../api';
 
 interface AddImageModalProps {
   isOpen: boolean;
   onClose: () => void;
   projectId: string;
   projectName: string;
+  onImageAdded?: (image: ResearchImage) => void;
 }
 
 interface FormErrors {
   name?: string;
   question?: string;
   file?: string;
+  submit?: string;
 }
 
-const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectId, projectName }) => {
+const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectId, projectName, onImageAdded }) => {
   const [name, setName] = useState('');
   const [question, setQuestion] = useState('');
   const [file, setFile] = useState<File | null>(null);
@@ -128,43 +131,23 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
-    // Prepare image data (as it would be sent to server)
-    const imageData = {
-      id: crypto.randomUUID(),
-      projectId,
-      name: name.trim(),
-      question: question.trim(),
-      addedAt: new Date().toISOString().split('T')[0],
-      reviewCount: 0,
-      // url will be set by backend after file upload
-    };
-
-    // Prepare FormData as it would be sent to server
-    const formData = new FormData();
-    formData.append('metadata', JSON.stringify(imageData));
-    formData.append('image', file!);
-
-    // Log the data that would be sent
-    console.log('=== New Image Data (JSON metadata) ===');
-    console.log(JSON.stringify(imageData, null, 2));
-    console.log('');
-    console.log('=== File Info ===');
-    console.log({
-      fileName: file!.name,
-      fileType: file!.type,
-      fileSize: `${(file!.size / 1024).toFixed(2)} KB`,
-    });
-    console.log('');
-    console.log('=== FormData would contain ===');
-    console.log('- metadata: JSON string with image data');
-    console.log('- image: File blob');
-    console.log('================================');
-
-    // Reload page after short delay to show the console output
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    try {
+      const newImage = await imagesApi.create(projectId, {
+        name: name.trim(),
+        question: question.trim(),
+        file: file!,
+      });
+      
+      onImageAdded?.(newImage);
+      handleClose();
+    } catch (error) {
+      console.error('Failed to upload image:', error);
+      setErrors({ submit: 'Failed to upload image. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -209,6 +192,13 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
           {/* Body */}
           <form onSubmit={handleSubmit}>
             <div className="space-y-5 px-6 py-5">
+              {/* Submit error */}
+              {errors.submit && (
+                <div className="rounded-lg bg-error-50 p-3 text-text-sm text-error-700">
+                  {errors.submit}
+                </div>
+              )}
+
               {/* Name field */}
               <div>
                 <label htmlFor="image-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
@@ -234,13 +224,13 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
               {/* Question field */}
               <div>
                 <label htmlFor="image-question" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Question for Reviewers <span className="text-error-500">*</span>
+                  Question <span className="text-error-500">*</span>
                 </label>
                 <textarea
                   id="image-question"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="What would you like reviewers to evaluate?"
+                  placeholder="What question should reviewers answer about this image?"
                   rows={3}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.question 
@@ -259,42 +249,41 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
                   Image File <span className="text-error-500">*</span>
                 </label>
                 
-                {!preview ? (
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/gif,image/webp"
+                  onChange={handleInputChange}
+                  className="hidden"
+                />
+
+                {!file ? (
                   <div
+                    onClick={() => fileInputRef.current?.click()}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
                     className={`cursor-pointer rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
-                      isDragOver
-                        ? 'border-brand-500 bg-brand-50'
-                        : errors.file
-                        ? 'border-error-300 bg-error-25'
-                        : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
+                      isDragOver 
+                        ? 'border-brand-500 bg-brand-50' 
+                        : errors.file 
+                          ? 'border-error-300 bg-error-25' 
+                          : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
                     }`}
                   >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/gif,image/webp"
-                      onChange={handleInputChange}
-                      className="hidden"
-                    />
-                    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gray-100">
-                      <UploadCloud01 className="h-5 w-5 text-gray-600" />
-                    </div>
-                    <p className="text-text-sm text-gray-600">
-                      <span className="font-semibold text-brand-600">Click to upload</span> or drag and drop
+                    <UploadCloud01 className="mx-auto h-10 w-10 text-gray-400" />
+                    <p className="mt-2 text-text-sm font-medium text-gray-700">
+                      Click to upload or drag and drop
                     </p>
                     <p className="mt-1 text-text-xs text-gray-500">
-                      PNG, JPG, GIF or WebP (max. 10MB)
+                      PNG, JPG, GIF, WebP (max. 10MB)
                     </p>
                   </div>
                 ) : (
                   <div className="relative rounded-lg border border-gray-200 p-3">
                     <div className="flex items-start gap-3">
                       <img
-                        src={preview}
+                        src={preview!}
                         alt="Preview"
                         className="h-20 w-20 rounded-lg object-cover"
                       />

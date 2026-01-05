@@ -1,18 +1,21 @@
 import React, { useState } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { XClose } from '@untitledui/icons';
+import { projectsApi, type ResearchProject } from '../api';
 
 interface CreateProjectModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onProjectCreated?: (project: ResearchProject) => void;
 }
 
 interface FormErrors {
   name?: string;
   description?: string;
+  submit?: string;
 }
 
-const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose }) => {
+const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onProjectCreated }) => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isHidden, setIsHidden] = useState(true);
@@ -42,30 +45,29 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setErrors({});
 
-    const projectData = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      description: description.trim(),
-      createdAt: new Date().toISOString().split('T')[0],
-      isHidden,
-      images: []
-    };
-
-    console.log('=== New Project Data (JSON) ===');
-    console.log(JSON.stringify(projectData, null, 2));
-    console.log('===============================');
-
-    // Reload page after short delay to show the console output
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
+    try {
+      const newProject = await projectsApi.create({
+        name: name.trim(),
+        description: description.trim(),
+        is_hidden: isHidden,
+      });
+      
+      onProjectCreated?.(newProject);
+      handleClose();
+    } catch (error) {
+      console.error('Failed to create project:', error);
+      setErrors({ submit: 'Failed to create project. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
@@ -106,6 +108,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
           {/* Body */}
           <form onSubmit={handleSubmit}>
             <div className="space-y-5 px-6 py-5">
+              {/* Submit error */}
+              {errors.submit && (
+                <div className="rounded-lg bg-error-50 p-3 text-text-sm text-error-700">
+                  {errors.submit}
+                </div>
+              )}
+
               {/* Name field */}
               <div>
                 <label htmlFor="project-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
@@ -137,8 +146,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                   id="project-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter project description"
-                  rows={3}
+                  placeholder="Describe your research project..."
+                  rows={4}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.description 
                       ? 'border-error-300 focus:border-error-300 focus:ring-error-100' 

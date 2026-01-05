@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from "react-router-dom";
 import { Button } from '@untitledui/base/buttons/button';
 import {
@@ -11,12 +11,14 @@ import {
   Trash01,
   Copy01,
   Image01,
-  Users01
+  Users01,
+  Loading02
 } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
 import EditImageModal from './EditImageModal';
+import { projectsApi, imagesApi, type ResearchProject, type ResearchImage } from '../api';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -30,76 +32,10 @@ const CopyIcon = Copy01;
 const ImageIcon = Image01;
 const UsersIcon = Users01;
 
-interface ResearchImage {
-  id: string;
-  name: string;
-  question: string;
-  url: string;
-  addedAt: string;
-  isHidden: boolean;
-  reviewCount: number;
-}
-
-interface ResearchProject {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: string;
-  isHidden: boolean;
-  images: ResearchImage[];
-}
-
-// Mock data - replace with actual API calls
-const mockProjects: ResearchProject[] = [
-  {
-    id: '1',
-    name: 'Mobile App Navigation Study',
-    description: 'Evaluating user interface navigation patterns in mobile applications',
-    createdAt: '2024-01-15',
-    isHidden: false,
-    images: [
-      {
-        id: 'img-1',
-        name: 'Homepage Design',
-        question: 'How intuitive is the navigation layout on the homepage?',
-        url: '/images/homepage.png',
-        addedAt: '2024-01-15',
-        isHidden: false,
-        reviewCount: 12
-      },
-      {
-        id: 'img-2',
-        name: 'Profile Page',
-        question: 'Is the user profile information easy to find and understand?',
-        url: '/images/profile.png',
-        addedAt: '2024-01-16',
-        isHidden: false,
-        reviewCount: 8
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'E-commerce Checkout Flow',
-    description: 'Understanding user behavior during the checkout process',
-    createdAt: '2024-02-01',
-    isHidden: false,
-    images: [
-      {
-        id: 'img-3',
-        name: 'Cart Summary',
-        question: 'Does the cart summary clearly show all costs before checkout?',
-        url: '/images/cart.png',
-        addedAt: '2024-02-01',
-        isHidden: true,
-        reviewCount: 15
-      }
-    ]
-  }
-];
-
 const AdminPage: React.FC = () => {
-  const [projects, setProjects] = useState<ResearchProject[]>(mockProjects);
+  const [projects, setProjects] = useState<ResearchProject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [expandedProject, setExpandedProject] = useState<string | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [addImageModalState, setAddImageModalState] = useState<{ isOpen: boolean; projectId: string; projectName: string }>({
@@ -114,6 +50,34 @@ const AdminPage: React.FC = () => {
     isOpen: false,
     project: null
   });
+  const [editImageModalState, setEditImageModalState] = useState<{
+    isOpen: boolean;
+    image: { id: string; name: string; question: string; url: string } | null;
+    projectId: string;
+  }>({
+    isOpen: false,
+    image: null,
+    projectId: ''
+  });
+
+  // Fetch projects on mount
+  useEffect(() => {
+    const fetchProjects = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const data = await projectsApi.list();
+        setProjects(data);
+      } catch (err) {
+        console.error('Failed to fetch projects:', err);
+        setError('Failed to load projects. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProjects();
+  }, []);
 
   const openAddImageModal = (projectId: string, projectName: string) => {
     setAddImageModalState({ isOpen: true, projectId, projectName });
@@ -134,16 +98,6 @@ const AdminPage: React.FC = () => {
     setEditProjectModalState({ isOpen: false, project: null });
   };
 
-  const [editImageModalState, setEditImageModalState] = useState<{
-    isOpen: boolean;
-    image: { id: string; name: string; question: string; url: string } | null;
-    projectId: string;
-  }>({
-    isOpen: false,
-    image: null,
-    projectId: ''
-  });
-
   const openEditImageModal = (image: ResearchImage, projectId: string) => {
     setEditImageModalState({
       isOpen: true,
@@ -156,45 +110,79 @@ const AdminPage: React.FC = () => {
     setEditImageModalState({ isOpen: false, image: null, projectId: '' });
   };
 
-  const toggleProjectVisibility = (projectId: string) => {
+  // Handle new project created
+  const handleProjectCreated = (newProject: ResearchProject) => {
+    setProjects(prev => [newProject, ...prev]);
+  };
+
+  // Handle new image added
+  const handleImageAdded = (newImage: ResearchImage) => {
     setProjects(prev => prev.map(project => 
-      project.id === projectId 
-        ? { ...project, isHidden: !project.isHidden }
+      project.id === addImageModalState.projectId 
+        ? { ...project, images: [...project.images, newImage] }
         : project
     ));
   };
 
-  const toggleImageVisibility = (projectId: string, imageId: string) => {
-    setProjects(prev => prev.map(project => 
-      project.id === projectId 
-        ? {
-            ...project,
-            images: project.images.map(image =>
-              image.id === imageId 
-                ? { ...image, isHidden: !image.isHidden }
-                : image
-            )
-          }
-        : project
-    ));
-  };
-
-  const deleteProject = (projectId: string) => {
-    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      setProjects(prev => prev.filter(project => project.id !== projectId));
+  const toggleProjectVisibility = async (projectId: string) => {
+    try {
+      await projectsApi.toggleVisibility(projectId);
+      setProjects(prev => prev.map(project => 
+        project.id === projectId 
+          ? { ...project, isHidden: !project.isHidden }
+          : project
+      ));
+    } catch (err) {
+      console.error('Failed to toggle project visibility:', err);
     }
   };
 
-  const deleteImage = (projectId: string, imageId: string) => {
-    if (window.confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+  const toggleImageVisibility = async (projectId: string, imageId: string) => {
+    try {
+      await imagesApi.toggleVisibility(imageId);
       setProjects(prev => prev.map(project => 
         project.id === projectId 
           ? {
               ...project,
-              images: project.images.filter(image => image.id !== imageId)
+              images: project.images.map(image =>
+                image.id === imageId 
+                  ? { ...image, isHidden: !image.isHidden }
+                  : image
+              )
             }
           : project
       ));
+    } catch (err) {
+      console.error('Failed to toggle image visibility:', err);
+    }
+  };
+
+  const deleteProject = async (projectId: string) => {
+    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
+      try {
+        await projectsApi.delete(projectId);
+        setProjects(prev => prev.filter(project => project.id !== projectId));
+      } catch (err) {
+        console.error('Failed to delete project:', err);
+      }
+    }
+  };
+
+  const deleteImage = async (projectId: string, imageId: string) => {
+    if (window.confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+      try {
+        await imagesApi.delete(imageId);
+        setProjects(prev => prev.map(project => 
+          project.id === projectId 
+            ? {
+                ...project,
+                images: project.images.filter(image => image.id !== imageId)
+              }
+            : project
+        ));
+      } catch (err) {
+        console.error('Failed to delete image:', err);
+      }
     }
   };
 
@@ -213,6 +201,37 @@ const AdminPage: React.FC = () => {
   const toggleProjectExpansion = (projectId: string) => {
     setExpandedProject(expandedProject === projectId ? null : projectId);
   };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-25">
+        <div className="text-center">
+          <Loading02 className="mx-auto h-8 w-8 animate-spin text-brand-600" />
+          <p className="mt-2 text-text-md text-gray-600">Loading projects...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-25">
+        <div className="text-center">
+          <p className="text-text-md text-error-600">{error}</p>
+          <Button 
+            color="primary" 
+            size="md" 
+            className="mt-4"
+            onClick={() => window.location.reload()}
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-25 px-4 py-6 sm:px-6 lg:px-8">
@@ -238,129 +257,145 @@ const AdminPage: React.FC = () => {
               }`}
             >
               {/* Project Header */}
-              <div className="border-b border-gray-200 px-6 py-5">
-                <div className="flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3">
-                      <h2 className="text-text-lg font-semibold text-gray-900">{project.name}</h2>
-                      {project.isHidden && (
-                        <span className="inline-flex items-center rounded-full bg-warning-50 px-2 py-1 text-text-xs font-medium text-warning-700">
-                          Hidden
-                        </span>
-                      )}
-                    </div>
-                    <p className="mt-1 text-text-sm text-gray-600 text-left">{project.description}</p>
-                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-text-sm text-gray-500">
-                      <span>Created: {new Date(project.createdAt).toLocaleDateString()}</span>
-                      <span className="flex items-center gap-1">
-                        <ImageIcon className="h-4 w-4" />
-                        {project.images.length} images
+              <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-3">
+                    <h2 className="truncate text-text-lg font-semibold text-gray-900">{project.name}</h2>
+                    {project.isHidden && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-text-xs font-medium text-gray-600">
+                        Hidden
                       </span>
-                      <span className="flex items-center gap-1">
-                        <UsersIcon className="h-4 w-4" />
-                        {project.images.reduce((total, img) => total + img.reviewCount, 0)} reviews
-                      </span>
-                    </div>
+                    )}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      color="secondary"
-                      size="sm"
-                      onClick={() => toggleProjectExpansion(project.id)}
-                      iconTrailing={expandedProject === project.id ? ChevronUpIcon : ChevronDownIcon}
-                    >
-                      {expandedProject === project.id ? 'Collapse' : 'Expand'}
-                    </Button>
-                    <Button
-                      color="secondary"
-                      size="sm"
-                      onClick={() => toggleProjectVisibility(project.id)}
-                      iconLeading={project.isHidden ? EyeOffIcon : EyeIcon}
-                      title={project.isHidden ? 'Show project' : 'Hide project'}
-                    />
-                    <Button
-                      color="secondary"
-                      size="sm"
-                      onClick={() => openEditProjectModal(project)}
-                      iconLeading={EditIcon}
-                      title="Edit project"
-                    />
-                    <Button
-                      color="secondary-destructive"
-                      size="sm"
-                      onClick={() => deleteProject(project.id)}
-                      iconLeading={TrashIcon}
-                      title="Delete project"
-                    />
+                  <p className="mt-1 line-clamp-2 text-text-sm text-gray-600">{project.description}</p>
+                  <div className="mt-2 flex items-center gap-4 text-text-xs text-gray-500">
+                    <span>Created: {project.createdAt}</span>
+                    <span className="flex items-center gap-1">
+                      <ImageIcon className="h-3.5 w-3.5" />
+                      {project.images.length} images
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <UsersIcon className="h-3.5 w-3.5" />
+                      {project.images.reduce((sum, img) => sum + img.reviewCount, 0)} reviews
+                    </span>
                   </div>
+                </div>
+
+                <div className="ml-4 flex items-center gap-2">
+                  <Button
+                    color="secondary"
+                    size="sm"
+                    onClick={() => toggleProjectVisibility(project.id)}
+                    iconLeading={project.isHidden ? EyeOffIcon : EyeIcon}
+                  >
+                    {project.isHidden ? 'Show' : 'Hide'}
+                  </Button>
+                  <Button
+                    color="secondary"
+                    size="sm"
+                    onClick={() => openEditProjectModal(project)}
+                    iconLeading={EditIcon}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    color="secondary-destructive"
+                    size="sm"
+                    onClick={() => deleteProject(project.id)}
+                    iconLeading={TrashIcon}
+                  >
+                    Delete
+                  </Button>
+                  <Button
+                    color="secondary"
+                    size="sm"
+                    onClick={() => toggleProjectExpansion(project.id)}
+                    iconLeading={expandedProject === project.id ? ChevronUpIcon : ChevronDownIcon}
+                  >
+                    {expandedProject === project.id ? 'Collapse' : 'Expand'}
+                  </Button>
                 </div>
               </div>
 
-              {/* Project Images */}
+              {/* Expanded Content */}
               {expandedProject === project.id && (
-                <div className="px-6 py-5">
-                  <div className="mb-5 flex items-center justify-between">
-                    <h3 className="text-text-lg font-semibold text-gray-900">Images</h3>
-                    <Button color="primary" size="sm" iconLeading={PlusIcon} onClick={() => openAddImageModal(project.id, project.name)}>
+                <div className="bg-gray-50 px-6 py-4">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-text-md font-medium text-gray-900">Images</h3>
+                    <Button
+                      color="primary"
+                      size="sm"
+                      iconLeading={PlusIcon}
+                      onClick={() => openAddImageModal(project.id, project.name)}
+                    >
                       Add Image
                     </Button>
                   </div>
-                  
+
                   {project.images.length === 0 ? (
-                    <div className="py-12 text-center">
+                    <div className="py-8 text-center">
                       <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
-                      <p className="mt-3 text-text-sm text-gray-500">No images added yet</p>
+                      <p className="mt-2 text-text-sm text-gray-500">No images added yet</p>
+                      <Button
+                        color="secondary"
+                        size="sm"
+                        className="mt-3"
+                        iconLeading={PlusIcon}
+                        onClick={() => openAddImageModal(project.id, project.name)}
+                      >
+                        Add your first image
+                      </Button>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                       {project.images.map((image) => (
                         <div
                           key={image.id}
-                          className={`rounded-lg border border-gray-200 p-4 ${
-                            image.isHidden ? 'bg-gray-50 opacity-60' : 'bg-white'
+                          className={`rounded-lg border border-gray-200 bg-white p-4 ${
+                            image.isHidden ? 'opacity-60' : ''
                           }`}
                         >
                           <div className="mb-3 flex items-start justify-between">
-                            <div className="min-w-0 flex-1 text-left">
-                              <h4 className="text-text-sm font-semibold text-gray-900">{image.name}</h4>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="truncate text-text-sm font-medium text-gray-900">{image.name}</h4>
                               {image.isHidden && (
-                                <span className="mt-1 inline-flex items-center rounded-full bg-warning-50 px-2 py-1 text-text-xs font-medium text-warning-700">
+                                <span className="mt-1 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-text-xs text-gray-600">
                                   Hidden
                                 </span>
                               )}
                             </div>
-                            <div className="flex items-center gap-1">
-                              <Button
-                                color="secondary"
-                                size="sm"
+                            <div className="ml-2 flex gap-1">
+                              <button
                                 onClick={() => toggleImageVisibility(project.id, image.id)}
-                                iconLeading={image.isHidden ? EyeOffIcon : EyeIcon}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                                 title={image.isHidden ? 'Show image' : 'Hide image'}
-                              />
-                              <Button
-                                color="secondary"
-                                size="sm"
+                              >
+                                {image.isHidden ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
+                              </button>
+                              <button
                                 onClick={() => openEditImageModal(image, project.id)}
-                                iconLeading={EditIcon}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
                                 title="Edit image"
-                              />
-                              <Button
-                                color="secondary-destructive"
-                                size="sm"
+                              >
+                                <EditIcon className="h-4 w-4" />
+                              </button>
+                              <button
                                 onClick={() => deleteImage(project.id, image.id)}
-                                iconLeading={TrashIcon}
+                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-error-600"
                                 title="Delete image"
-                              />
+                              >
+                                <TrashIcon className="h-4 w-4" />
+                              </button>
                             </div>
                           </div>
-                          
-                          <p className="mb-3 text-text-sm text-gray-600 text-justify">{image.question}</p>
-                          
-                          <div className="mb-3 flex justify-between text-text-sm text-gray-600">
-                            <div className="mb-1 flex items-center gap-1">
-                              <UsersIcon className="h-3.5 w-3.5" />
+
+                          <p className="mb-3 line-clamp-2 text-text-xs text-gray-600">{image.question}</p>
+
+                          <div className="mb-3 flex items-center gap-2 text-text-xs text-gray-500">
+                            <span className="flex items-center gap-1">
+                              <UsersIcon className="h-3 w-3" />
                               {image.reviewCount} reviews
-                            </div>
+                            </span>
                             <div>Added at: {image.addedAt}</div>
                           </div>
                           
@@ -410,7 +445,8 @@ const AdminPage: React.FC = () => {
       {/* Create Project Modal */}
       <CreateProjectModal 
         isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+        onClose={() => setIsCreateModalOpen(false)}
+        onProjectCreated={handleProjectCreated}
       />
 
       {/* Add Image Modal */}
@@ -419,6 +455,7 @@ const AdminPage: React.FC = () => {
         onClose={closeAddImageModal}
         projectId={addImageModalState.projectId}
         projectName={addImageModalState.projectName}
+        onImageAdded={handleImageAdded}
       />
 
       {/* Edit Project Modal */}
