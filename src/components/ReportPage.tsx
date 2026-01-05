@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
 import { Eye, EyeOff } from '@untitledui/icons';
-import { reportApi, type ReportData, type ReportAnnotation } from '../api';
+import { reportApi, type ReportData, type ReportAnnotation } from '../api/index';
 
 interface ReportPageProps {
   uniqueId: string;

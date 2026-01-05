@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router';
+import { Navigate, useLocation } from 'react-router';
 import { Input } from '@untitledui/base/input/input';
 import { Button } from '@untitledui/base/buttons/button';
 import { Checkbox } from 'react-aria-components';
 import { Mail01, Lock01, AlertCircle } from '@untitledui/icons';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormData {
   email: string;
@@ -11,15 +12,13 @@ interface LoginFormData {
   rememberMe: boolean;
 }
 
-interface LoginPageProps {
-  onLoginSuccess?: () => void;
-  redirectTo?: string;
-}
+const LoginPage: React.FC = () => {
+  const { login, isAuthenticated, isLoading: authLoading } = useAuth();
+  const location = useLocation();
+  
+  // Get redirect path from location state or default to /admin
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/admin';
 
-const LoginPage: React.FC<LoginPageProps> = ({ 
-  onLoginSuccess, 
-  redirectTo = '/admin' 
-}) => {
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -29,7 +28,6 @@ const LoginPage: React.FC<LoginPageProps> = ({
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string>('');
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const validateForm = (): boolean => {
     const newErrors: Partial<Record<keyof LoginFormData, string>> = {};
@@ -71,19 +69,12 @@ const LoginPage: React.FC<LoginPageProps> = ({
     setLoginError('');
 
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const result = await login(formData.email, formData.password);
       
-      if (formData.email === 'admin@example.com' && formData.password === 'password123') {
-        localStorage.setItem('adminAuth', 'authenticated');
-        if (formData.rememberMe) {
-          localStorage.setItem('adminRememberMe', 'true');
-        }
-        
-        setIsAuthenticated(true);
-        onLoginSuccess?.();
-      } else {
-        setLoginError('Invalid email or password. Please check your credentials and try again.');
+      if (!result.success) {
+        setLoginError(result.message || 'Invalid email or password. Please check your credentials and try again.');
       }
+      // If successful, the auth context will update and trigger redirect
     } catch {
       setLoginError('An error occurred during login. Please try again later.');
     } finally {
@@ -97,8 +88,21 @@ const LoginPage: React.FC<LoginPageProps> = ({
     }
   };
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent"></div>
+          <p className="mt-4 text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Redirect if already authenticated
   if (isAuthenticated) {
-    return <Navigate to={redirectTo} replace />;
+    return <Navigate to={from} replace />;
   }
 
   return (
@@ -150,55 +154,51 @@ const LoginPage: React.FC<LoginPageProps> = ({
               hint={errors.password}
             />
 
-            {/* Remember Me & Forgot Password */}
+            {/* Remember Me Checkbox */}
             <div className="flex items-center justify-between">
               <Checkbox
                 isSelected={formData.rememberMe}
                 onChange={(isSelected) => handleInputChange('rememberMe', isSelected)}
-                className="group flex items-center gap-2 text-sm cursor-pointer"
+                className="group flex items-center gap-2 cursor-pointer"
               >
-                <div className="flex h-4 w-4 items-center justify-center rounded border border-primary bg-primary transition group-data-[selected]:border-brand-solid group-data-[selected]:bg-brand-solid">
+                <div className="w-4 h-4 rounded border border-primary bg-primary flex items-center justify-center group-data-[selected]:bg-brand-solid group-data-[selected]:border-brand-solid transition-colors">
                   <svg
-                    className="h-3 w-3 text-white opacity-0 group-data-[selected]:opacity-100"
-                    viewBox="0 0 12 12"
+                    className="w-3 h-3 text-white opacity-0 group-data-[selected]:opacity-100 transition-opacity"
+                    viewBox="0 0 12 10"
                     fill="none"
                   >
                     <path
-                      d="M10 3L4.5 8.5L2 6"
+                      d="M1 5L4.5 8.5L11 1.5"
                       stroke="currentColor"
-                      strokeWidth="1.5"
+                      strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 </div>
-                <span className="text-secondary">Remember me</span>
+                <span className="text-sm text-secondary">Remember me</span>
               </Checkbox>
-
-              <Button color="link-color" size="sm">
-                Forgot your password?
-              </Button>
             </div>
 
-            {/* Login Error Message */}
+            {/* Error Message */}
             {loginError && (
-              <div className="rounded-lg bg-error-primary p-4 ring-1 ring-error_subtle ring-inset">
-                <div className="flex gap-3">
-                  <AlertCircle className="h-5 w-5 text-fg-error-secondary shrink-0" />
-                  <p className="text-sm text-error-primary">
-                    {loginError}
-                  </p>
+              <div className="rounded-lg bg-error-secondary p-4">
+                <div className="flex">
+                  <AlertCircle className="h-5 w-5 text-fg-error-secondary flex-shrink-0" />
+                  <div className="ml-3">
+                    <p className="text-sm text-error-primary">{loginError}</p>
+                  </div>
                 </div>
               </div>
             )}
 
             {/* Submit Button */}
             <Button
-              color="primary"
+              variant="primary"
               size="lg"
-              onClick={handleSubmit}
-              isLoading={isLoading}
               className="w-full"
+              onPress={handleSubmit}
+              isDisabled={isLoading}
             >
               {isLoading ? 'Signing in...' : 'Sign in'}
             </Button>
@@ -209,7 +209,7 @@ const LoginPage: React.FC<LoginPageProps> = ({
             <div className="text-center">
               <p className="text-xs text-tertiary mb-2">Development credentials:</p>
               <code className="text-xs bg-secondary px-2 py-1 rounded text-secondary">
-                admin@example.com / password123
+                admin@example.com / admin123
               </code>
             </div>
           </div>

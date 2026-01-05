@@ -4,8 +4,10 @@ import ImageReviewPage from './components/ReviewPage';
 import AnnotationReportPage from './components/ReportPage';
 import LoginPage from './components/LoginPage';
 import AdminPage from './components/AdminPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/AuthContext';
 import { imagesApi } from './api';
-import './App.css'
+import './App.css';
 
 
 // Wrapper component for the review page to access route parameters and fetch image data
@@ -92,7 +94,7 @@ const ReviewPageWrapper: React.FC = () => {
   );
 };
 
-// Wrapper component for the standard report page to access route parameters
+// Wrapper component for the report page (protected)
 const ReportPageWrapper: React.FC = () => {
   const { uniqueId } = useParams<{ uniqueId: string }>();
   
@@ -112,12 +114,38 @@ const ReportPageWrapper: React.FC = () => {
 
 const App: React.FC = () => (
   <BrowserRouter>
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/admin" element={<AdminPage />} />
-      <Route path="/review/:uniqueId" element={<ReviewPageWrapper />} />
-      <Route path="/report/:uniqueId" element={<ReportPageWrapper />} />
-    </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Public route: Login */}
+        <Route path="/login" element={<LoginPage />} />
+        
+        {/* Public route: Review page (respects hidden flag on backend) */}
+        <Route path="/review/:uniqueId" element={<ReviewPageWrapper />} />
+        
+        {/* Protected route: Admin panel */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminPage />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Protected route: Report page */}
+        <Route
+          path="/report/:uniqueId"
+          element={
+            <ProtectedRoute>
+              <ReportPageWrapper />
+            </ProtectedRoute>
+          }
+        />
+        
+        {/* Default redirect to admin (will redirect to login if not authenticated) */}
+        <Route path="/" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+      </Routes>
+    </AuthProvider>
   </BrowserRouter>
 );
 

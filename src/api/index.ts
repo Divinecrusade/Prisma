@@ -1,7 +1,43 @@
 // API Configuration
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8888/api';
 
-// Types matching backend serializers
+// =============================================================================
+// Auth Token Management
+// =============================================================================
+
+let authToken: string | null = null;
+
+export function setAuthToken(token: string): void {
+  authToken = token;
+}
+
+export function clearAuthToken(): void {
+  authToken = null;
+}
+
+// =============================================================================
+// Types
+// =============================================================================
+
+// Auth types
+export interface AuthUser {
+  email: string;
+  is_admin: boolean;
+}
+
+export interface LoginResponse {
+  success: boolean;
+  message?: string;
+  user?: AuthUser;
+  token?: string;
+}
+
+export interface SessionResponse {
+  authenticated: boolean;
+  user: AuthUser | null;
+}
+
+// API types matching backend serializers
 export interface ApiResearchImage {
   id: string;
   project: string;
@@ -18,9 +54,9 @@ export interface ApiResearchProject {
   id: string;
   name: string;
   description: string;
-  created_at?: string;  // optional - not returned by create endpoint
+  created_at?: string;
   is_hidden: boolean;
-  images?: ApiResearchImage[];  // optional - not returned by create/update endpoints
+  images?: ApiResearchImage[];
 }
 
 // Frontend types (camelCase)
@@ -43,7 +79,10 @@ export interface ResearchProject {
   images: ResearchImage[];
 }
 
+// =============================================================================
 // Transform functions
+// =============================================================================
+
 const transformImage = (img: ApiResearchImage): ResearchImage => ({
   id: img.id,
   name: img.name,
@@ -63,8 +102,11 @@ const transformProject = (proj: ApiResearchProject): ResearchProject => ({
   images: proj.images?.map(transformImage) ?? [],
 });
 
+// =============================================================================
 // API Error handling
-class ApiError extends Error {
+// =============================================================================
+
+export class ApiError extends Error {
   constructor(public status: number, message: string, public data?: unknown) {
     super(message);
     this.name = 'ApiError';
@@ -74,12 +116,39 @@ class ApiError extends Error {
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, data.message || response.statusText, data);
+    throw new ApiError(response.status, data.message || data.error || response.statusText, data);
   }
   return response.json();
 }
 
+// =============================================================================
+// Fetch wrapper with auth
+// =============================================================================
+
+/**
+ * Fetch wrapper that includes auth token in Authorization header.
+ */
+async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(options.headers as Record<string, string>),
+  };
+  
+  // Add Authorization header if token exists
+  if (authToken) {
+    headers['Authorization'] = `Bearer ${authToken}`;
+  }
+
+  return fetch(url, { 
+    ...options,
+    headers,
+  });
+}
+
+// =============================================================================
 // Paginated response type
+// =============================================================================
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
@@ -87,28 +156,55 @@ interface PaginatedResponse<T> {
   results: T[];
 }
 
+// =============================================================================
+// Auth API
+// =============================================================================
+
+export const authApi = {
+  async login(email: string, password: string): Promise<LoginResponse> {
+    const response = await apiFetch(`${API_BASE_URL}/auth/login/`, {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+    return handleResponse<LoginResponse>(response);
+  },
+
+  async logout(): Promise<{ success: boolean; message: string }> {
+    const response = await apiFetch(`${API_BASE_URL}/auth/logout/`, {
+      method: 'POST',
+    });
+    return handleResponse(response);
+  },
+
+  async getCurrentSession(): Promise<SessionResponse> {
+    const response = await apiFetch(`${API_BASE_URL}/auth/me/`);
+    return handleResponse<SessionResponse>(response);
+  },
+};
+
+// =============================================================================
 // Projects API
+// =============================================================================
+
 export const projectsApi = {
   async list(): Promise<ResearchProject[]> {
-    const response = await fetch(`${API_BASE_URL}/projects/`);
+    const response = await apiFetch(`${API_BASE_URL}/projects/`);
     const data = await handleResponse<PaginatedResponse<ApiResearchProject>>(response);
     return data.results.map(transformProject);
   },
 
   async create(project: { name: string; description: string; is_hidden?: boolean }): Promise<ResearchProject> {
-    const response = await fetch(`${API_BASE_URL}/projects/`, {
+    const response = await apiFetch(`${API_BASE_URL}/projects/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(project),
     });
     const data = await handleResponse<ApiResearchProject>(response);
     return transformProject(data);
   },
 
-  async update(id: string, project: { name?: string; description?: string }): Promise<ResearchProject> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+  async update(id: string, project: { name?: string; description?: string; is_hidden?: boolean }): Promise<ResearchProject> {
+    const response = await apiFetch(`${API_BASE_URL}/projects/${id}/`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(project),
     });
     const data = await handleResponse<ApiResearchProject>(response);
@@ -116,28 +212,38 @@ export const projectsApi = {
   },
 
   async delete(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/`, {
+    const response = await apiFetch(`${API_BASE_URL}/projects/${id}/`, {
       method: 'DELETE',
     });
     if (!response.ok) {
-      throw new ApiError(response.status, response.statusText);
+      throw new ApiError(response.status, 'Failed to delete project');
     }
   },
 
   async toggleVisibility(id: string): Promise<{ is_hidden: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/projects/${id}/visibility/`, {
+    const response = await apiFetch(`${API_BASE_URL}/projects/${id}/visibility/`, {
       method: 'PATCH',
     });
     return handleResponse(response);
   },
 };
 
+// =============================================================================
 // Images API
+// =============================================================================
+
 export const imagesApi = {
   async listByProject(projectId: string): Promise<ResearchImage[]> {
-    const response = await fetch(`${API_BASE_URL}/images/?project_id=${projectId}`);
+    const response = await apiFetch(`${API_BASE_URL}/images/?project_id=${projectId}`);
     const data = await handleResponse<PaginatedResponse<ApiResearchImage>>(response);
     return data.results.map(transformImage);
+  },
+
+  async getById(id: string): Promise<ResearchImage> {
+    // This endpoint is public for review page
+    const response = await apiFetch(`${API_BASE_URL}/images/${id}/`);
+    const data = await handleResponse<ApiResearchImage>(response);
+    return transformImage(data);
   },
 
   async create(projectId: string, imageData: { name: string; question: string; file: File }): Promise<ResearchImage> {
@@ -147,8 +253,14 @@ export const imagesApi = {
     formData.append('question', imageData.question);
     formData.append('image', imageData.file);
 
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+    
     const response = await fetch(`${API_BASE_URL}/images/`, {
       method: 'POST',
+      headers,
       body: formData,
     });
     const data = await handleResponse<ApiResearchImage>(response);
@@ -161,8 +273,14 @@ export const imagesApi = {
     if (imageData.question) formData.append('question', imageData.question);
     if (imageData.file) formData.append('image', imageData.file);
 
+    const headers: Record<string, string> = {};
+    if (authToken) {
+      headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
     const response = await fetch(`${API_BASE_URL}/images/${id}/`, {
       method: 'PATCH',
+      headers,
       body: formData,
     });
     const data = await handleResponse<ApiResearchImage>(response);
@@ -170,29 +288,26 @@ export const imagesApi = {
   },
 
   async delete(id: string): Promise<void> {
-    const response = await fetch(`${API_BASE_URL}/images/${id}/`, {
+    const response = await apiFetch(`${API_BASE_URL}/images/${id}/`, {
       method: 'DELETE',
     });
     if (!response.ok) {
-      throw new ApiError(response.status, response.statusText);
+      throw new ApiError(response.status, 'Failed to delete image');
     }
   },
 
   async toggleVisibility(id: string): Promise<{ is_hidden: boolean }> {
-    const response = await fetch(`${API_BASE_URL}/images/${id}/visibility/`, {
+    const response = await apiFetch(`${API_BASE_URL}/images/${id}/visibility/`, {
       method: 'PATCH',
     });
     return handleResponse(response);
   },
-
-  async getById(id: string): Promise<ResearchImage> {
-    const response = await fetch(`${API_BASE_URL}/images/${id}/`);
-    const data = await handleResponse<ApiResearchImage>(response);
-    return transformImage(data);
-  },
 };
 
+// =============================================================================
 // Annotations API
+// =============================================================================
+
 export const annotationsApi = {
   async submit(data: {
     id: string;
@@ -200,16 +315,19 @@ export const annotationsApi = {
     text_content: string;
     annotations: unknown[];
   }): Promise<{ message: string; session_id: string; created_count: number; total_count: number }> {
-    const response = await fetch(`${API_BASE_URL}/annotations/submit/`, {
+    const response = await apiFetch(`${API_BASE_URL}/annotations/submit/`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
     return handleResponse(response);
   },
 };
 
-// Report API response types
+// =============================================================================
+// Report API (Admin only)
+// =============================================================================
+
+// API response types
 interface ApiAnnotation {
   id: string;
   left: number;
@@ -253,7 +371,7 @@ export interface ReportData {
 // Report API
 export const reportApi = {
   async getReportData(imageId: string): Promise<ReportData> {
-    const response = await fetch(`${API_BASE_URL}/report/${imageId}/`);
+    const response = await apiFetch(`${API_BASE_URL}/report/${imageId}/`);
     const data = await handleResponse<ApiReportData>(response);
     
     // Transform to frontend format
