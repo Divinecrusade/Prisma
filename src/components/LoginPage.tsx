@@ -106,14 +106,14 @@ const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-primary flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-secondary">
-            <Lock01 className="h-6 w-6 text-fg-brand-primary" />
+          <div className="mx-auto flex items-center justify-center rounded-full bg-brand-secondary">
+            <Lock01 className="text-fg-brand-primary" />
           </div>
-          <h2 className="mt-6 text-display-sm font-semibold text-primary">
-            Admin Access
+          <h2 className="mt-2 text-display-sm font-semibold text-primary">
+            Вход в систему
           </h2>
           <p className="mt-2 text-md text-tertiary">
-            Sign in to access the UX Research administration panel
+            Авторизуйтесь, чтобы получить доступ к панеле управления
           </p>
         </div>
       </div>
@@ -123,7 +123,7 @@ const LoginPage: React.FC = () => {
           <div className="space-y-6" onKeyDown={handleKeyPress}>
             {/* Email Field */}
             <Input
-              label="Email address"
+              label="Адрес электронной почты"
               type="email"
               name="email"
               autoComplete="email"
@@ -138,11 +138,11 @@ const LoginPage: React.FC = () => {
 
             {/* Password Field */}
             <Input
-              label="Password"
+              label="Пароль"
               type="password"
               name="password"
               autoComplete="current-password"
-              placeholder="Enter your password"
+              placeholder="admin123"
               value={formData.password}
               onChange={(value) => handleInputChange('password', value)}
               isRequired
@@ -171,18 +171,8 @@ const LoginPage: React.FC = () => {
               onPress={handleSubmit}
               isDisabled={isLoading}
             >
-              {isLoading ? 'Signing in...' : 'Sign in'}
+              {isLoading ? 'Выполняется вход...' : 'Войти'}
             </Button>
-          </div>
-
-          {/* Development Helper */}
-          <div className="mt-6 pt-6 border-t border-secondary">
-            <div className="text-center">
-              <p className="text-xs text-tertiary mb-2">Development credentials:</p>
-              <code className="text-xs bg-secondary px-2 py-1 rounded text-secondary">
-                admin@example.com / admin123
-              </code>
-            </div>
           </div>
         </div>
       </div>

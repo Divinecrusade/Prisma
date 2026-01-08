@@ -568,9 +568,9 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           <div className="flex items-center justify-between px-6 py-6">
             <div>
               <h1 className="text-display-sm font-semibold text-primary">
-                Annotation Analysis - {reportData.imageName}
+                Отчёт - {reportData.imageName}
               </h1>
-              <p className="mt-1 text-text-sm text-gray-600">{reportData.textContent}</p>
+              <p className="mt-1 text-left text-text-sm text-gray-600">{reportData.textContent}</p>
             </div>
             <Button
               color={showAnnotations ? 'primary' : 'secondary'}
@@ -578,7 +578,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               onClick={() => setShowAnnotations(!showAnnotations)}
               iconLeading={showAnnotations ? Eye : EyeOff}
             >
-              {showAnnotations ? 'Hide' : 'Show'} Annotations
+              {showAnnotations ? 'Скрыть' : 'Показать'} ответы
             </Button>
           </div>
 
@@ -643,11 +643,11 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                       }}
                     >
                       <div className="mb-1 text-xs font-semibold">
-                        Annotation #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
+                        Ответ #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
                       </div>
                       <div className="text-xs">{hoveredAnnotationData.text || '(no comment)'}</div>
                       <div className="mt-2 text-xs text-gray-300">
-                        Click to {selectedAnnotation === hoveredAnnotationData.id ? 'deselect' : 'select'}
+                        ЛКМ - {selectedAnnotation === hoveredAnnotationData.id ? 'отменить выбор' : 'выбрать'}
                       </div>
                     </div>
                   )}
@@ -660,10 +660,10 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                   className="flex flex-col"
                   style={{ height: `${canvasHeight}px` }}
                 >
-                  <div className="flex-1 space-y-4 overflow-y-auto">
+                  <div className="text-left flex-1 space-y-4 overflow-y-auto">
                     {reportData.annotations.length === 0 ? (
                       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-center">
-                        <p className="text-text-sm text-gray-500">No annotations yet</p>
+                        <p className="text-text-sm text-gray-500">Не было оставлено ни одного ответа</p>
                       </div>
                     ) : (
                       reportData.annotations.map((annotation, index) => (
@@ -709,16 +709,16 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               >
                 <div className="grid grid-cols-3 gap-4 text-text-sm h-3/4 items-center">
                   <div>
-                    <span className="font-medium text-blue-800">Generated:</span>
+                    <span className="font-medium text-blue-800">Дата отчёта:</span>
                     <div className="text-blue-700">{new Date().toLocaleDateString()}</div>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-800">Coverage Area:</span>
-                    <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
+                    <span className="font-medium text-blue-800">Покрытие ответами:</span>
+                    <div className="text-blue-700">{stats.coverage.toFixed(1)}% от площади изображения</div>
                   </div>
                   <div>
-                    <span className="font-medium text-blue-800">Overlap Rate:</span>
-                    <div className="text-blue-700">{stats.overlapRate.toFixed(1)}% of annotations</div>
+                    <span className="font-medium text-blue-800">Пересечение ответов:</span>
+                    <div className="text-blue-700">{stats.overlapRate.toFixed(1)}% от всех ответов</div>
                   </div>
                 </div>
               </div>
@@ -729,7 +729,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               >
                 <div className="space-y-2 text-text-sm text-gray-600">
                   <div className="flex justify-between">
-                    <span>Total Annotations:</span>
+                    <span>Итоговое количество ответов:</span>
                     <span className="font-medium">{reportData.annotations.length}</span>
                   </div>
                 </div>

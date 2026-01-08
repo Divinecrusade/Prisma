@@ -178,7 +178,7 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
           {/* Header */}
           <div className="flex justify-between border-b border-gray-200 px-6 py-4">
             <div className="text-left">
-              <h2 className="text-text-lg font-semibold text-gray-900">Add Image</h2>
+              <h2 className="text-text-lg font-semibold text-gray-900">Добавить изображение</h2>
               <p className="text-text-sm text-gray-500">{projectName}</p>
             </div>
             <button
@@ -200,16 +200,16 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
               )}
 
               {/* Name field */}
-              <div>
+              <div className="text-left">
                 <label htmlFor="image-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Image Name <span className="text-error-500">*</span>
+                  Название <span className="text-error-500">*</span>
                 </label>
                 <input
                   id="image-name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter image name"
+                  placeholder="Введите название, которое ассоцируется с тестом"
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.name 
                       ? 'border-error-300 focus:border-error-300 focus:ring-error-100' 
@@ -222,15 +222,15 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
               </div>
 
               {/* Question field */}
-              <div>
+              <div className="text-left">
                 <label htmlFor="image-question" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Question <span className="text-error-500">*</span>
+                  Вопрос <span className="text-error-500">*</span>
                 </label>
                 <textarea
                   id="image-question"
                   value={question}
                   onChange={(e) => setQuestion(e.target.value)}
-                  placeholder="What question should reviewers answer about this image?"
+                  placeholder="Какой вопрос хотите задать для этого изображения?"
                   rows={3}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.question 
@@ -245,8 +245,8 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
 
               {/* File upload */}
               <div>
-                <label className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Image File <span className="text-error-500">*</span>
+                <label className="text-left mb-1.5 block text-text-sm font-medium text-gray-700">
+                  Файл с изображением <span className="text-error-500">*</span>
                 </label>
                 
                 <input
@@ -273,7 +273,7 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
                   >
                     <UploadCloud01 className="mx-auto h-10 w-10 text-gray-400" />
                     <p className="mt-2 text-text-sm font-medium text-gray-700">
-                      Click to upload or drag and drop
+                      Выберите файл или перетащите его сюда
                     </p>
                     <p className="mt-1 text-text-xs text-gray-500">
                       PNG, JPG, GIF, WebP (max. 10MB)
@@ -315,10 +315,10 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
             {/* Footer */}
             <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
               <Button color="secondary" size="md" onClick={handleClose} type="button">
-                Cancel
+                Отмена
               </Button>
               <Button color="primary" size="md" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Uploading...' : 'Add Image'}
+                {isSubmitting ? 'Загрузка...' : 'Загрузить изображение'}
               </Button>
             </div>
           </form>

@@ -53,13 +53,13 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
     <div className="bg-primary border-primary max-w-xs rounded-lg border p-4 shadow-lg">
       <div className="mb-3">
         <label className="text-secondary mb-1.5 block text-sm font-medium">
-          Add Comment
+          Добавить ответ
         </label>
         <TextAreaBase
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={3}
-          placeholder="Enter your comment..."
+          placeholder="Оставьте свой ответ..."
         />
       </div>
       <Button
@@ -69,7 +69,7 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
         className="w-full"
         iconLeading={Save01}
       >
-        Save
+        Сохранить
       </Button>
     </div>
   );
@@ -143,7 +143,7 @@ const AnnotationHandler: React.FC<{
       setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (err) {
       console.error('Failed to submit annotations:', err);
-      setError('Failed to submit annotations. Please try again.');
+      setError('Не удалось отправить ответы. Пожалуйста, повторите попытку.');
       setTimeout(() => setError(null), 5000);
     } finally {
       setIsSubmitting(false);
@@ -187,7 +187,7 @@ const AnnotationHandler: React.FC<{
         showTextWhileLoading
         iconLeading={Send01}
       >
-        Submit Annotations
+        Отправить ответы
       </Button>
     </>
   );
@@ -263,7 +263,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
             {/* Left: Title + Description */}
             <div className="shrink-0">
               <h1 className="text-primary text-xl font-semibold">
-                Image Review - {uniqueId}
+                {uniqueId}
               </h1>
               {textContent && (
                 <p className="text-tertiary mt-1 text-sm">{textContent}</p>
@@ -281,7 +281,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
 
           {/* Image Section - aligned left */}
           <div className="flex-1 overflow-hidden">
-            <div className="overflow-hidden rounded-lg">
+            <div className="overflow-hidden">
               <ImageAnnotator>
                 <img
                   src={imageHref}

@@ -96,7 +96,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-            <h2 className="text-text-lg font-semibold text-gray-900">Create New Project</h2>
+            <h2 className="text-text-lg font-semibold text-gray-900">Создать новую папку</h2>
             <button
               onClick={handleClose}
               className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-500"
@@ -116,7 +116,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               )}
 
               {/* Name field */}
-              <div>
+              <div className="text-left">
                 <label htmlFor="project-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
                   Project Name <span className="text-error-500">*</span>
                 </label>
@@ -125,7 +125,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Enter project name"
+                  placeholder="Введите название для папки с изображениями"
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.name 
                       ? 'border-error-300 focus:border-error-300 focus:ring-error-100' 
@@ -138,15 +138,15 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               </div>
 
               {/* Description field */}
-              <div>
+              <div className="text-left">
                 <label htmlFor="project-description" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Description <span className="text-error-500">*</span>
+                  Описание <span className="text-error-500">*</span>
                 </label>
                 <textarea
                   id="project-description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Describe your research project..."
+                  placeholder="Оставьте комментарий, описывающий содержимое папки..."
                   rows={4}
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.description 
@@ -161,9 +161,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
               {/* isHidden toggle */}
               <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
-                <div>
-                  <p className="text-text-sm font-medium text-gray-700">Hide from non-admins</p>
-                  <p className="text-text-sm text-gray-500">Images won't be accessible to reviewers until published</p>
+                <div className="text-left">
+                  <p className="text-text-sm font-medium text-gray-700">Скрыть от пользователей</p>
+                  <p className="text-text-sm text-gray-500">Пользователи не смогут оставлять аннотации к изображениям в папке, пока вы не откроете доступ</p>
                 </div>
                 <button
                   type="button"
@@ -186,10 +186,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             {/* Footer */}
             <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
               <Button color="secondary" size="md" onClick={handleClose} type="button">
-                Cancel
+                Отмена
               </Button>
               <Button color="primary" size="md" type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Creating...' : 'Create Project'}
+                {isSubmitting ? 'Создание...' : 'Создать папку'}
               </Button>
             </div>
           </form>

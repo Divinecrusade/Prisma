@@ -234,7 +234,7 @@ const AdminPage: React.FC = () => {
     <div className="min-h-screen bg-gray-25 px-4 py-6 sm:px-6 lg:px-8">
       <header className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-7xl flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-gray-900">UX Research Panel</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Панель управления</h1>
           <div className="flex items-center gap-4">
             {user && (
               <span className="text-sm text-gray-600">{user.email}</span>
@@ -245,20 +245,20 @@ const AdminPage: React.FC = () => {
               onClick={handleLogout}
               iconLeading={LogOut}
             >
-              Logout
+              Выйти
             </Button>
           </div>
         </div>
       </header>
       <div className="mx-auto max-w-7xl">
         {/* Header */}
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-8 mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-display-md font-semibold text-gray-900">Research Projects</h1>
-            <p className="mt-1 text-text-md text-gray-600">Manage your UX research projects and analyze user feedback</p>
+            <h1 className="text-display-md font-semibold text-gray-900 text-left">Папки</h1>
+            <p className="mt-1 text-text-md text-gray-600">Организуйте ваши UX-исследования в папки</p>
           </div>
           <Button color="primary" size="md" iconLeading={PlusIcon} onClick={() => setIsCreateModalOpen(true)}>
-            New Project
+            Создать папку
           </Button>
         </div>
 
@@ -277,21 +277,20 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <h2 className="truncate text-text-lg font-semibold text-gray-900">{project.name}</h2>
                     {project.isHidden && (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-text-xs font-medium text-gray-600">
-                        Hidden
+                      <span className="text-warning-500 inline-flex items-center rounded-full px-2.5 py-0.5 text-text-xs font-medium">
+                        Скрыто от пользователей
                       </span>
                     )}
                   </div>
-                  <p className="mt-1 line-clamp-2 text-text-sm text-gray-600">{project.description}</p>
+                  <p className="mt-1 line-clamp-2 text-text-sm text-gray-600 text-left">{project.description}</p>
                   <div className="mt-2 flex items-center gap-4 text-text-xs text-gray-500">
-                    <span>Created: {project.createdAt}</span>
+                    <span>Дата создания: {project.createdAt}</span>
                     <span className="flex items-center gap-1">
-                      <ImageIcon className="h-3.5 w-3.5" />
-                      {project.images.length} images
+                      <ImageIcon className="h-3.5 w-3.5" /> {project.images.length}
                     </span>
                     <span className="flex items-center gap-1">
                       <UsersIcon className="h-3.5 w-3.5" />
-                      {project.images.reduce((sum, img) => sum + img.reviewCount, 0)} reviews
+                      {project.images.reduce((sum, img) => sum + img.reviewCount, 0)}
                     </span>
                   </div>
                 </div>
@@ -303,7 +302,7 @@ const AdminPage: React.FC = () => {
                     onClick={() => toggleProjectVisibility(project.id)}
                     iconLeading={project.isHidden ? EyeOffIcon : EyeIcon}
                   >
-                    {project.isHidden ? 'Show' : 'Hide'}
+                    {project.isHidden ? 'Показать' : 'Скрыть'}
                   </Button>
                   <Button
                     color="secondary"
@@ -311,7 +310,7 @@ const AdminPage: React.FC = () => {
                     onClick={() => openEditProjectModal(project)}
                     iconLeading={EditIcon}
                   >
-                    Edit
+                    Редактировать
                   </Button>
                   <Button
                     color="secondary-destructive"
@@ -319,7 +318,7 @@ const AdminPage: React.FC = () => {
                     onClick={() => deleteProject(project.id)}
                     iconLeading={TrashIcon}
                   >
-                    Delete
+                    Удалить
                   </Button>
                   <Button
                     color="secondary"
@@ -327,7 +326,7 @@ const AdminPage: React.FC = () => {
                     onClick={() => toggleProjectExpansion(project.id)}
                     iconLeading={expandedProject === project.id ? ChevronUpIcon : ChevronDownIcon}
                   >
-                    {expandedProject === project.id ? 'Collapse' : 'Expand'}
+                    {expandedProject === project.id ? 'Свернуть' : 'Развернуть'}
                   </Button>
                 </div>
               </div>
@@ -336,30 +335,21 @@ const AdminPage: React.FC = () => {
               {expandedProject === project.id && (
                 <div className="bg-gray-50 px-6 py-4">
                   <div className="mb-4 flex items-center justify-between">
-                    <h3 className="text-text-md font-medium text-gray-900">Images</h3>
+                    <h3 className="text-text-md font-medium text-gray-900">Изображения</h3>
                     <Button
                       color="primary"
                       size="sm"
                       iconLeading={PlusIcon}
                       onClick={() => openAddImageModal(project.id, project.name)}
                     >
-                      Add Image
+                      Добавить изображение
                     </Button>
                   </div>
 
                   {project.images.length === 0 ? (
                     <div className="py-8 text-center">
                       <ImageIcon className="mx-auto h-12 w-12 text-gray-300" />
-                      <p className="mt-2 text-text-sm text-gray-500">No images added yet</p>
-                      <Button
-                        color="secondary"
-                        size="sm"
-                        className="mt-3"
-                        iconLeading={PlusIcon}
-                        onClick={() => openAddImageModal(project.id, project.name)}
-                      >
-                        Add your first image
-                      </Button>
+                      <p className="mt-2 text-text-sm text-gray-500">Ни одного изображения не добавлено</p>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -382,11 +372,11 @@ const AdminPage: React.FC = () => {
                           )}
 
                           <div className="mb-3 flex items-start justify-between">
-                            <div className="min-w-0 flex-1">
+                            <div className="text-left min-w-0 flex-1">
                               <h4 className="truncate text-text-sm font-medium text-gray-900">{image.name}</h4>
                               {image.isHidden && (
-                                <span className="mt-1 inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-text-xs text-gray-600">
-                                  Hidden
+                                <span className="text-warning-600 mt-1 inline-flex items-center rounded-full py-0.5 text-text-xs">
+                                  Скрыто от пользователей
                                 </span>
                               )}
                             </div>
@@ -394,28 +384,28 @@ const AdminPage: React.FC = () => {
                               <button
                                 onClick={() => toggleImageVisibility(project.id, image.id)}
                                 className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                                title={image.isHidden ? 'Show image' : 'Hide image'}
+                                title={image.isHidden ? 'Показать' : 'Скрыть'}
                               >
                                 {image.isHidden ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                               </button>
                               <button
                                 onClick={() => deleteImage(project.id, image.id)}
                                 className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-error-600"
-                                title="Delete image"
+                                title="Удалить"
                               >
                                 <TrashIcon className="h-4 w-4" />
                               </button>
                             </div>
                           </div>
 
-                          <p className="mb-3 line-clamp-2 text-text-xs text-gray-600">{image.question}</p>
+                          <p className="text-left mb-3 line-clamp-2 text-text-xs text-gray-600">{image.question}</p>
 
-                          <div className="mb-3 flex items-center gap-2 text-text-xs text-gray-500">
+                          <div className="mb-3 flex justify-between gap-2 text-text-xs text-gray-500">
+                            <div>Дата добавления: {image.addedAt}</div>
                             <span className="flex items-center gap-1">
                               <UsersIcon className="h-3 w-3" />
-                              {image.reviewCount} reviews
+                              {image.reviewCount}
                             </span>
-                            <div>Added at: {image.addedAt}</div>
                           </div>
                           
                           <div className="flex gap-2">
@@ -426,7 +416,7 @@ const AdminPage: React.FC = () => {
                               iconLeading={CopyIcon}
                               className="flex-1"
                             >
-                              Get Review Link
+                              Скопировать ссылку на ревью
                             </Button>
                             <Button
                               color="secondary"
@@ -434,7 +424,7 @@ const AdminPage: React.FC = () => {
                               onClick={() => gotoReport(image.id)}
                               className="flex-1"
                             >
-                              Go to Report
+                              Отчёт
                             </Button>
                           </div>
                         </div>
