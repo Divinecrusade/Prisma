@@ -491,19 +491,44 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     return null;
   }
 
+  const calculateOverlapRate = (annotations: ReportAnnotation[]): number => {
+    if (annotations.length < 2) return 0;
+    
+    let overlappingCount = 0;
+    
+    for (let i = 0; i < annotations.length; i++) {
+      const a = annotations[i];
+      for (let j = i + 1; j < annotations.length; j++) {
+        const b = annotations[j];
+        
+        // Check if rectangles overlap
+        const overlaps = 
+          a.left < b.left + b.width &&
+          a.left + a.width > b.left &&
+          a.top < b.top + b.height &&
+          a.top + a.height > b.top;
+        
+        if (overlaps) {
+          overlappingCount++;
+          break; // Count annotation 'a' only once
+        }
+      }
+    }
+    
+    return (overlappingCount / annotations.length) * 100;
+  };
+
   const getDensityStatistics = () => {
-    if (densityData.length === 0) return { max: 0, average: 0, coverage: 0 };
+    if (densityData.length === 0) return { coverage: 0, overlapRate: 0 };
     
     const flatDensity = densityData.flat();
-    const max = Math.max(...flatDensity);
-    const total = flatDensity.reduce((sum, val) => sum + val, 0);
     const nonZero = flatDensity.filter(val => val > 0).length;
     const coverage = (nonZero / flatDensity.length) * 100;
+    const overlapRate = calculateOverlapRate(reportData.annotations);
     
     return {
-      max,
-      average: total / flatDensity.length,
-      coverage
+      coverage,
+      overlapRate
     };
   };
 
@@ -534,8 +559,6 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const hoveredAnnotationData = hoveredAnnotation 
     ? reportData.annotations.find(a => a.id === hoveredAnnotation)
     : null;
-
-  const minBlockHeight = 180;
 
   return (
     <div className="min-h-screen bg-secondary">
@@ -683,21 +706,19 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               {/* Analysis Insights - 3/4 width */}
               <div 
                 className="rounded-lg border border-brand-200 bg-brand-50 p-4 xl:col-span-3"
-                style={{ minHeight: `${minBlockHeight}px` }}
               >
-                <h3 className="text-text-md font-semibold text-blue-900 mb-3">Analysis Insights</h3>
                 <div className="grid grid-cols-3 gap-4 text-text-sm h-3/4 items-center">
                   <div>
-                    <span className="font-medium text-blue-800">Maximum Density:</span>
-                    <div className="text-blue-700">{stats.max} overlapping annotations</div>
-                  </div>
-                  <div>
-                    <span className="font-medium text-blue-800">Average Density:</span>
-                    <div className="text-blue-700">{stats.average.toFixed(2)} annotations per region</div>
+                    <span className="font-medium text-blue-800">Generated:</span>
+                    <div className="text-blue-700">{new Date().toLocaleDateString()}</div>
                   </div>
                   <div>
                     <span className="font-medium text-blue-800">Coverage Area:</span>
                     <div className="text-blue-700">{stats.coverage.toFixed(1)}% of total area</div>
+                  </div>
+                  <div>
+                    <span className="font-medium text-blue-800">Overlap Rate:</span>
+                    <div className="text-blue-700">{stats.overlapRate.toFixed(1)}% of annotations</div>
                   </div>
                 </div>
               </div>
@@ -705,25 +726,11 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               {/* General Info - 1/4 width */}
               <div 
                 className="rounded-lg bg-gray-50 p-4 xl:col-span-1"
-                style={{ minHeight: `${minBlockHeight}px` }}
               >
-                <h3 className="mb-3 text-text-md font-semibold text-gray-900">General Info</h3>
                 <div className="space-y-2 text-text-sm text-gray-600">
                   <div className="flex justify-between">
                     <span>Total Annotations:</span>
                     <span className="font-medium">{reportData.annotations.length}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Review Coverage:</span>
-                    <span className="font-medium">{stats.coverage.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Annotation Density:</span>
-                    <span className="font-medium">{stats.average.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Generated:</span>
-                    <span className="font-medium">{new Date().toLocaleDateString()}</span>
                   </div>
                 </div>
               </div>
