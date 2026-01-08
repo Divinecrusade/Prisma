@@ -17,7 +17,6 @@ import {
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
-import EditImageModal from './EditImageModal';
 import { projectsApi, imagesApi, type ResearchProject, type ResearchImage } from '../api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -53,15 +52,6 @@ const AdminPage: React.FC = () => {
   }>({
     isOpen: false,
     project: null
-  });
-  const [editImageModalState, setEditImageModalState] = useState<{
-    isOpen: boolean;
-    image: { id: string; name: string; question: string; url: string } | null;
-    projectId: string;
-  }>({
-    isOpen: false,
-    image: null,
-    projectId: ''
   });
 
   // Fetch projects on mount
@@ -102,18 +92,6 @@ const AdminPage: React.FC = () => {
     setEditProjectModalState({ isOpen: false, project: null });
   };
 
-  const openEditImageModal = (image: ResearchImage, projectId: string) => {
-    setEditImageModalState({
-      isOpen: true,
-      image: { id: image.id, name: image.name, question: image.question, url: image.url },
-      projectId
-    });
-  };
-
-  const closeEditImageModal = () => {
-    setEditImageModalState({ isOpen: false, image: null, projectId: '' });
-  };
-
   // Handle new project created
   const handleProjectCreated = (newProject: ResearchProject) => {
     setProjects(prev => [newProject, ...prev]);
@@ -133,20 +111,6 @@ const AdminPage: React.FC = () => {
     setProjects(prev => prev.map(project => 
       project.id === addImageModalState.projectId 
         ? { ...project, images: [...project.images, newImage] }
-        : project
-    ));
-  };
-
-  // Handle image updated
-  const handleImageUpdated = (updatedImage: ResearchImage) => {
-    setProjects(prev => prev.map(project => 
-      project.id === editImageModalState.projectId 
-        ? {
-            ...project,
-            images: project.images.map(image =>
-              image.id === updatedImage.id ? updatedImage : image
-            )
-          }
         : project
     ));
   };
@@ -435,13 +399,6 @@ const AdminPage: React.FC = () => {
                                 {image.isHidden ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                               </button>
                               <button
-                                onClick={() => openEditImageModal(image, project.id)}
-                                className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
-                                title="Edit image"
-                              >
-                                <EditIcon className="h-4 w-4" />
-                              </button>
-                              <button
                                 onClick={() => deleteImage(project.id, image.id)}
                                 className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-error-600"
                                 title="Delete image"
@@ -526,15 +483,6 @@ const AdminPage: React.FC = () => {
         onClose={closeEditProjectModal}
         project={editProjectModalState.project}
         onProjectUpdated={handleProjectUpdated}
-      />
-
-      {/* Edit Image Modal */}
-      <EditImageModal
-        isOpen={editImageModalState.isOpen}
-        onClose={closeEditImageModal}
-        image={editImageModalState.image}
-        projectId={editImageModalState.projectId}
-        onImageUpdated={handleImageUpdated}
       />
     </div>
   );

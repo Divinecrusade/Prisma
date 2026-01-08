@@ -115,18 +115,23 @@ export class ApiError extends Error {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const data = await response.json().catch(() => ({}));
-    throw new ApiError(response.status, data.message || data.error || response.statusText, data);
+    let errorData;
+    try {
+      errorData = await response.json();
+    } catch {
+      errorData = null;
+    }
+    throw new ApiError(
+      response.status,
+      errorData?.message || errorData?.error || `HTTP error ${response.status}`,
+      errorData
+    );
   }
   return response.json();
 }
 
-// =============================================================================
-// Fetch wrapper with auth
-// =============================================================================
-
 /**
- * Fetch wrapper that includes auth token in Authorization header.
+ * Wrapper around fetch that adds auth headers
  */
 async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
   const headers: Record<string, string> = {
@@ -267,26 +272,6 @@ export const imagesApi = {
     return transformImage(data);
   },
 
-  async update(id: string, imageData: { name?: string; question?: string; file?: File }): Promise<ResearchImage> {
-    const formData = new FormData();
-    if (imageData.name) formData.append('name', imageData.name);
-    if (imageData.question) formData.append('question', imageData.question);
-    if (imageData.file) formData.append('image', imageData.file);
-
-    const headers: Record<string, string> = {};
-    if (authToken) {
-      headers['Authorization'] = `Bearer ${authToken}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/images/${id}/`, {
-      method: 'PATCH',
-      headers,
-      body: formData,
-    });
-    const data = await handleResponse<ApiResearchImage>(response);
-    return transformImage(data);
-  },
-
   async delete(id: string): Promise<void> {
     const response = await apiFetch(`${API_BASE_URL}/images/${id}/`, {
       method: 'DELETE',
@@ -347,7 +332,7 @@ interface ApiReportData {
   annotations: ApiAnnotation[];
 }
 
-// Frontend report types
+// Frontend types
 export interface ReportAnnotation {
   id: string;
   left: number;
@@ -355,50 +340,37 @@ export interface ReportAnnotation {
   width: number;
   height: number;
   text: string;
-  timestamp: string;
   sessionId: string;
+  createdAt: string;
 }
 
 export interface ReportData {
   uniqueId: string;
-  imageHref: string;
-  textContent: string;
   imageName: string;
+  question: string;
+  imageUrl: string;
   annotations: ReportAnnotation[];
-  submittedAt: string;
 }
 
-// Report API
 export const reportApi = {
-  async getReportData(imageId: string): Promise<ReportData> {
+  async getReport(imageId: string): Promise<ReportData> {
     const response = await apiFetch(`${API_BASE_URL}/report/${imageId}/`);
     const data = await handleResponse<ApiReportData>(response);
-    
-    // Transform to frontend format
-    const annotations: ReportAnnotation[] = data.annotations.map(ann => ({
-      id: ann.id,
-      left: ann.left,
-      top: ann.top,
-      width: ann.width,
-      height: ann.height,
-      text: ann.text,
-      timestamp: ann.createdAt,
-      sessionId: ann.sessionId,
-    }));
-
-    // Get the latest annotation timestamp as submittedAt
-    const latestTimestamp = annotations.length > 0
-      ? annotations.reduce((latest, ann) => 
-          ann.timestamp > latest ? ann.timestamp : latest, annotations[0].timestamp)
-      : new Date().toISOString();
-
     return {
       uniqueId: data.uniqueId,
-      imageHref: data.imageUrl,
-      textContent: data.question,
       imageName: data.imageName,
-      annotations,
-      submittedAt: latestTimestamp,
+      question: data.question,
+      imageUrl: data.imageUrl,
+      annotations: data.annotations.map(ann => ({
+        id: ann.id,
+        left: ann.left,
+        top: ann.top,
+        width: ann.width,
+        height: ann.height,
+        text: ann.text,
+        sessionId: ann.sessionId,
+        createdAt: ann.createdAt,
+      })),
     };
   },
 };
