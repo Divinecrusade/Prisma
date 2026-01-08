@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { Navigate, useLocation } from 'react-router';
 import { Input } from '@untitledui/base/input/input';
 import { Button } from '@untitledui/base/buttons/button';
-import { Checkbox } from 'react-aria-components';
 import { Mail01, Lock01, AlertCircle } from '@untitledui/icons';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LoginFormData {
   email: string;
   password: string;
-  rememberMe: boolean;
 }
 
 const LoginPage: React.FC = () => {
@@ -21,8 +19,7 @@ const LoginPage: React.FC = () => {
 
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
-    password: '',
-    rememberMe: false
+    password: ''
   });
   
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
@@ -48,7 +45,7 @@ const LoginPage: React.FC = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (field: keyof LoginFormData, value: string | boolean) => {
+  const handleInputChange = (field: keyof LoginFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     
     if (errors[field]) {
@@ -153,32 +150,6 @@ const LoginPage: React.FC = () => {
               icon={Lock01}
               hint={errors.password}
             />
-
-            {/* Remember Me Checkbox */}
-            <div className="flex items-center justify-between">
-              <Checkbox
-                isSelected={formData.rememberMe}
-                onChange={(isSelected) => handleInputChange('rememberMe', isSelected)}
-                className="group flex items-center gap-2 cursor-pointer"
-              >
-                <div className="w-4 h-4 rounded border border-primary bg-primary flex items-center justify-center group-data-[selected]:bg-brand-solid group-data-[selected]:border-brand-solid transition-colors">
-                  <svg
-                    className="w-3 h-3 text-white opacity-0 group-data-[selected]:opacity-100 transition-opacity"
-                    viewBox="0 0 12 10"
-                    fill="none"
-                  >
-                    <path
-                      d="M1 5L4.5 8.5L11 1.5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <span className="text-sm text-secondary">Remember me</span>
-              </Checkbox>
-            </div>
 
             {/* Error Message */}
             {loginError && (
