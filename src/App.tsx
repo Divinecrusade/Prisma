@@ -90,6 +90,7 @@ const ReviewPageWrapper: React.FC = () => {
       imageHref={imageData.url}
       uniqueId={uniqueId}
       textContent={imageData.question}
+      imageTitle={imageData.name}
     />
   );
 };

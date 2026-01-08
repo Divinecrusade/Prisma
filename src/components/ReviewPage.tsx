@@ -17,6 +17,7 @@ interface ReviewPageProps {
   imageHref: string;
   uniqueId: string;
   textContent: string;
+  imageTitle: string;
 }
 
 interface ImageDimensions {
@@ -159,7 +160,7 @@ const AnnotationHandler: React.FC<{
             <div className="flex items-center gap-2">
               <CheckCircle className="text-fg-success-primary size-5" />
               <p className="text-fg-success-primary text-sm font-medium">
-                You sent answer successfully
+                Ваш(-и) ответ(-ы) успешно отправлен(-ы)
               </p>
             </div>
           </div>
@@ -196,7 +197,8 @@ const AnnotationHandler: React.FC<{
 const ReviewPage: React.FC<ReviewPageProps> = ({
   imageHref,
   uniqueId,
-  textContent
+  textContent,
+  imageTitle
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [imageDimensions, setImageDimensions] = useState<ImageDimensions>({
@@ -263,7 +265,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
             {/* Left: Title + Description */}
             <div className="shrink-0">
               <h1 className="text-primary text-xl font-semibold">
-                {uniqueId}
+                {imageTitle}
               </h1>
               {textContent && (
                 <p className="text-tertiary mt-1 text-sm">{textContent}</p>
