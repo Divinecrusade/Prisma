@@ -332,7 +332,7 @@ interface ApiReportData {
   annotations: ApiAnnotation[];
 }
 
-// Frontend types
+// Frontend report types
 export interface ReportAnnotation {
   id: string;
   left: number;
@@ -340,37 +340,50 @@ export interface ReportAnnotation {
   width: number;
   height: number;
   text: string;
+  timestamp: string;
   sessionId: string;
-  createdAt: string;
 }
 
 export interface ReportData {
   uniqueId: string;
+  imageHref: string;
+  textContent: string;
   imageName: string;
-  question: string;
-  imageUrl: string;
   annotations: ReportAnnotation[];
+  submittedAt: string;
 }
 
+// Report API
 export const reportApi = {
-  async getReport(imageId: string): Promise<ReportData> {
+  async getReportData(imageId: string): Promise<ReportData> {
     const response = await apiFetch(`${API_BASE_URL}/report/${imageId}/`);
     const data = await handleResponse<ApiReportData>(response);
+    
+    // Transform to frontend format
+    const annotations: ReportAnnotation[] = data.annotations.map(ann => ({
+      id: ann.id,
+      left: ann.left,
+      top: ann.top,
+      width: ann.width,
+      height: ann.height,
+      text: ann.text,
+      timestamp: ann.createdAt,
+      sessionId: ann.sessionId,
+    }));
+
+    // Get the latest annotation timestamp as submittedAt
+    const latestTimestamp = annotations.length > 0
+      ? annotations.reduce((latest, ann) => 
+          ann.timestamp > latest ? ann.timestamp : latest, annotations[0].timestamp)
+      : new Date().toISOString();
+
     return {
       uniqueId: data.uniqueId,
+      imageHref: data.imageUrl,
+      textContent: data.question,
       imageName: data.imageName,
-      question: data.question,
-      imageUrl: data.imageUrl,
-      annotations: data.annotations.map(ann => ({
-        id: ann.id,
-        left: ann.left,
-        top: ann.top,
-        width: ann.width,
-        height: ann.height,
-        text: ann.text,
-        sessionId: ann.sessionId,
-        createdAt: ann.createdAt,
-      })),
+      annotations,
+      submittedAt: latestTimestamp,
     };
   },
 };
