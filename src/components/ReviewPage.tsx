@@ -5,11 +5,12 @@ import {
   ImageAnnotator, 
   ImageAnnotationPopup,
   useAnnotations,
+  useAnnotator,
   type ImageAnnotation 
 } from '@annotorious/react';
 import { Button } from '@untitledui/base/buttons/button';
 import { TextAreaBase } from '@untitledui/base/textarea/textarea';
-import { CheckCircle, Send01, Save01 } from '@untitledui/icons';
+import { CheckCircle, Send01, Save01, Trash01 } from '@untitledui/icons';
 import { annotationsApi } from '../api';
 import '@annotorious/react/annotorious-react.css';
 
@@ -30,6 +31,7 @@ interface ImageDimensions {
 // Custom popup component for text input
 const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
   const [comment, setComment] = useState('');
+  const annotator = useAnnotator();
 
   React.useEffect(() => {
     const commentBody = annotation.bodies.find((body: any) => body.purpose === 'commenting');
@@ -50,6 +52,10 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
     }
   };
 
+  const onDelete = () => {
+    annotator?.removeAnnotation(annotation.id);
+  };
+
   return (
     <div className="bg-primary border-primary max-w-xs rounded-lg border p-4 shadow-lg">
       <div className="mb-3">
@@ -63,15 +69,26 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
           placeholder="Оставьте свой ответ..."
         />
       </div>
-      <Button
-        color="primary"
-        size="sm"
-        onClick={onSave}
-        className="w-full"
-        iconLeading={Save01}
-      >
-        Сохранить
-      </Button>
+      <div className="flex gap-2">
+        <Button
+          color="primary"
+          size="sm"
+          onClick={onSave}
+          className="flex-1"
+          iconLeading={Save01}
+        >
+          Сохранить
+        </Button>
+        {/* ADD DELETE BUTTON */}
+        <Button
+          color="secondary"
+          size="sm"
+          onClick={onDelete}
+          iconLeading={Trash01}
+        >
+          Удалить
+        </Button>
+      </div>
     </div>
   );
 };
