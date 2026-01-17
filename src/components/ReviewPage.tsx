@@ -49,6 +49,8 @@ const CommentPopup = ({ annotation, onCreateBody, onUpdateBody }: any) => {
     } else {
       onCreateBody(updated);
     }
+
+    annotator?.setSelected();
   };
 
   const onDelete = () => {
