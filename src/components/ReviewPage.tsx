@@ -5,8 +5,7 @@ import {
   ImageAnnotator, 
   ImageAnnotationPopup,
   useAnnotations,
-  useAnnotator,
-  type ImageAnnotation 
+  useAnnotator
 } from '@annotorious/react';
 import { Button } from '@untitledui/base/buttons/button';
 import { TextAreaBase } from '@untitledui/base/textarea/textarea';
@@ -269,9 +268,6 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
     return () => window.removeEventListener('resize', calculateDimensions);
   }, [imageHref]);
 
-  const contentWidth = imageDimensions.scaledWidth 
-    ? `${imageDimensions.scaledWidth}px` : 'auto';
-
   return (
     <div className="bg-secondary flex h-screen flex-col overflow-hidden">
       <Annotorious>
@@ -279,8 +275,7 @@ const ReviewPage: React.FC<ReviewPageProps> = ({
         <div ref={containerRef} className="flex h-full flex-col p-4">
           {/* Header Row - centered content, width matches image */}
           <div 
-            className="bg-primary mb-4 flex shrink-0 items-center rounded-lg px-6 py-4 shadow-sm"
-            style={{ width: contentWidth }}
+            className="bg-primary mb-4 flex w-full shrink-0 items-center rounded-lg px-6 py-4 shadow-sm"
           >
             {/* Left: Title + Description */}
             <div className="shrink-0">
