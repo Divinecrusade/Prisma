@@ -101,6 +101,7 @@ const AnnotationHandler: React.FC<{
   imageDimensions: ImageDimensions;
 }> = ({ uniqueId, imageHref, textContent, imageDimensions }) => {
   const annotations = useAnnotations();
+  const annotator = useAnnotator();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,6 +158,8 @@ const AnnotationHandler: React.FC<{
       const result = await annotationsApi.submit(submissionData);
       console.log('Annotations submitted:', result);
       
+      annotator?.clearAnnotations();
+
       setShowSuccessMessage(true);
       setTimeout(() => setShowSuccessMessage(false), 3000);
     } catch (err) {
