@@ -442,10 +442,10 @@ const AdminPage: React.FC = () => {
             <div className="mb-4 text-gray-400">
               <ImageIcon className="mx-auto h-16 w-16" />
             </div>
-            <h3 className="text-text-lg font-semibold text-gray-900">No projects yet</h3>
-            <p className="mt-1 text-text-sm text-gray-600">Create your first UX research project to get started</p>
+            <h3 className="text-text-lg font-semibold text-gray-900">Не создано ни одной папки (иссследовательского проекта)</h3>
+            <p className="mt-1 text-text-sm text-gray-600">Создайте первую папку для UX исследования, чтобы начать</p>
             <Button color="primary" size="md" iconLeading={PlusIcon} className="mt-4" onClick={() => setIsCreateModalOpen(true)}>
-              Create Project
+              Создать папку
             </Button>
           </div>
         )}

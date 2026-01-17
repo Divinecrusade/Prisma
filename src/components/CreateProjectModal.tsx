@@ -26,19 +26,19 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     const newErrors: FormErrors = {};
     
     if (!name.trim()) {
-      newErrors.name = 'Project name is required';
+      newErrors.name = 'Название папки не должно быть пустым';
     } else if (name.trim().length < 3) {
-      newErrors.name = 'Project name must be at least 3 characters';
+      newErrors.name = 'Название папки должно состоять из, как минимум, 3 символов';
     } else if (name.trim().length > 100) {
-      newErrors.name = 'Project name must be less than 100 characters';
+      newErrors.name = 'Длина названия папки не должна превышать 100 символов';
     }
 
     if (!description.trim()) {
-      newErrors.description = 'Description is required';
+      newErrors.description = 'Описание папки необходимо';
     } else if (description.trim().length < 10) {
-      newErrors.description = 'Description must be at least 10 characters';
+      newErrors.description = 'Описание должно быть длиннее 9 символов';
     } else if (description.trim().length > 500) {
-      newErrors.description = 'Description must be less than 500 characters';
+      newErrors.description = 'Описание должно быть не длиннее 500 символов';
     }
 
     setErrors(newErrors);
@@ -64,7 +64,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       handleClose();
     } catch (error) {
       console.error('Failed to create project:', error);
-      setErrors({ submit: 'Failed to create project. Please try again.' });
+      setErrors({ submit: 'Ошибка создания папки. Пожалуйста, повторите попытку' });
     } finally {
       setIsSubmitting(false);
     }

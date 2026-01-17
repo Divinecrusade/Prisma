@@ -43,7 +43,7 @@ const ReviewPageWrapper: React.FC = () => {
         });
       } catch (err) {
         console.error('Failed to fetch image data:', err);
-        setError('Failed to load image. Please check the URL and try again.');
+        setError('Неудалось загрузить изображение. Пожалуйста, проверьте путь и повторите попытку');
       } finally {
         setIsLoading(false);
       }
@@ -56,8 +56,8 @@ const ReviewPageWrapper: React.FC = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Invalid Review Request</h1>
-          <p className="text-gray-600">The review identifier is missing or invalid.</p>
+          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Неверный запрос на ревью</h1>
+          <p className="text-gray-600">Идентификатор изображения отсутствует или неправильный</p>
         </div>
       </div>
     );
@@ -68,7 +68,7 @@ const ReviewPageWrapper: React.FC = () => {
       <div className="flex min-h-screen items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-brand-600 border-t-transparent"></div>
-          <p className="mt-4 text-gray-600">Loading image...</p>
+          <p className="mt-4 text-gray-600">Загрузка изображения...</p>
         </div>
       </div>
     );
