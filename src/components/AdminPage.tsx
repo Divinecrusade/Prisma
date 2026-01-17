@@ -14,6 +14,7 @@ import {
   Users01,
   LogOut01,
 } from '@untitledui/icons';
+import { CheckCircle } from '@untitledui/icons';
 import CreateProjectModal from './CreateProjectModal';
 import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
@@ -177,10 +178,13 @@ const AdminPage: React.FC = () => {
     }
   };
 
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   const copyReviewLink = (imageId: string) => {
     const link = `${window.location.origin}/review/${imageId}`;
     navigator.clipboard.writeText(link);
-    alert('Review link copied to clipboard!');
+    setToastMessage('Ссылка на ревью скопирована!');
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const navigate = useNavigate();
@@ -474,6 +478,13 @@ const AdminPage: React.FC = () => {
         project={editProjectModalState.project}
         onProjectUpdated={handleProjectUpdated}
       />
+
+    {toastMessage && (
+      <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-xl bg-gray-900 px-4 py-3 text-sm font-medium text-white shadow-lg">
+        <CheckCircle className="h-5 w-5 text-success-500" />
+        {toastMessage}
+      </div>
+    )}
     </div>
   );
 };
