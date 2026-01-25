@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
+import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
 import { Button } from '@untitledui/base/buttons/button';
-import { Eye, EyeOff } from '@untitledui/icons';
+import { Eye, EyeOff, ChevronDown } from '@untitledui/icons';
 import { reportApi, type ReportData, type ReportAnnotation } from '../api/index';
 
 interface ReportPageProps {
@@ -20,6 +20,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
   const [selectedAnnotation, setSelectedAnnotation] = useState<string | null>(null);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [canvasDimensions, setCanvasDimensions] = useState<{ width: number; height: number }>({ width: 600, height: 400 });
+  const [expandedSessions, setExpandedSessions] = useState<Set<string>>(new Set());
 
   // Max canvas width
   const MAX_CANVAS_WIDTH = 800;
@@ -455,6 +456,16 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, [canvasDimensions.height]);
 
+  const groupedBySession = useMemo(() => {
+    if (!reportData) return [];  // Add this null check
+    const groups: Record<string, ReportAnnotation[]> = {};
+    reportData.annotations.forEach(ann => {
+      if (!groups[ann.sessionId]) groups[ann.sessionId] = [];
+      groups[ann.sessionId].push(ann);
+    });
+    return Object.entries(groups);
+  }, [reportData]);  // Change dependency to just reportData
+
   // Loading state
   if (isLoading) {
     return (
@@ -635,13 +646,14 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                   )}
                   
                   {hoveredAnnotationData && showAnnotations && (
-                    <div 
-                      className="pointer-events-none absolute z-30 max-w-xs rounded-lg bg-gray-900 p-3 text-white shadow-xl"
-                      style={{
-                        left: Math.min(mousePosition.x + 10, 350),
-                        top: Math.min(mousePosition.y + 10, 300)
-                      }}
-                    >
+                      <div 
+                        className="pointer-events-none absolute z-30 max-w-xs rounded-lg bg-gray-900 p-3 text-white shadow-xl"
+                        style={{
+                          left: `${(hoveredAnnotationData.left + hoveredAnnotationData.width / 2) * 100}%`,
+                          top: `${(hoveredAnnotationData.top + hoveredAnnotationData.height) * 100}%`,
+                          transform: 'translateX(-50%)'
+                        }}
+                      >
                       <div className="mb-1 text-xs font-semibold">
                         Ответ #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
                       </div>
@@ -663,33 +675,64 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                         <p className="text-text-sm text-gray-500">Не было оставлено ни одного ответа</p>
                       </div>
                     ) : (
-                      reportData.annotations.map((annotation, index) => (
-                        <div
-                          key={annotation.id}
-                          className={`cursor-pointer rounded-lg border-2 p-4 transition-all ${
-                            selectedAnnotation === annotation.id
-                              ? 'border-brand-500 bg-brand-50'
-                              : hoveredAnnotation === annotation.id
-                                ? 'border-success-500 bg-success-50'
-                                : 'border-gray-200 bg-primary hover:border-gray-300'
-                          }`}
-                          onClick={() => setSelectedAnnotation(annotation.id === selectedAnnotation ? null : annotation.id)}
-                          onMouseEnter={() => setHoveredAnnotation(annotation.id)}
-                          onMouseLeave={() => setHoveredAnnotation(null)}
-                        >
-                          <div className="flex items-start space-x-3">
-                            <div 
-                              className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
-                              style={{ backgroundColor: getAnnotationColor(annotation.id, index).replace('0.5)', '1)').replace('0.8)', '1)') }}
-                            >
-                              {index + 1}
+                      groupedBySession.map(([sessionId, sessionAnnotations], sessionIndex) => (
+                        <div key={sessionId} className="rounded-lg border border-gray-200">
+                          {/* Session header - clickable */}
+                          <button
+                            className="flex w-full items-center justify-between p-3 text-left hover:bg-gray-50"
+                            onClick={() => setExpandedSessions(prev => {
+                              const next = new Set(prev);
+                              next.has(sessionId) ? next.delete(sessionId) : next.add(sessionId);
+                              return next;
+                            })}
+                          >
+                            <span className="font-medium text-gray-900">
+                              Сессия {sessionIndex + 1}
+                            </span>
+                            <ChevronDown className={`h-4 w-4 transition-transform ${
+                              expandedSessions.has(sessionId) ? 'rotate-180' : ''
+                            }`} />
+                          </button>
+                          
+                          {/* Annotations list - collapsible */}
+                          {expandedSessions.has(sessionId) && (
+                            <div className="space-y-2 border-t border-gray-200 p-3">
+                              {sessionAnnotations.map((annotation) => {
+                                // Get global index for consistent coloring
+                                const globalIndex = reportData.annotations.findIndex(a => a.id === annotation.id);
+                                
+                                return (
+                                  <div
+                                    key={annotation.id}
+                                    className={`cursor-pointer rounded-lg border-2 p-3 transition-all ${
+                                      selectedAnnotation === annotation.id
+                                        ? 'border-brand-500 bg-brand-50'
+                                        : 'border-gray-200 bg-primary hover:border-brand-300'
+                                    }`}
+                                    onClick={() => setSelectedAnnotation(
+                                      annotation.id === selectedAnnotation ? null : annotation.id
+                                    )}
+                                    onMouseEnter={() => setHoveredAnnotation(annotation.id)}
+                                    onMouseLeave={() => setHoveredAnnotation(null)}
+                                  >
+                                    <div className="flex items-start space-x-3">
+                                      <div 
+                                        className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white"
+                                        style={{ backgroundColor: getAnnotationColor(annotation.id, globalIndex).replace('0.5)', '1)').replace('0.8)', '1)') }}
+                                      >
+                                        {globalIndex + 1}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <p className="text-text-sm text-gray-900">
+                                          {annotation.text || '(без комментария)'}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-text-sm text-gray-900">
-                                {annotation.text || '(без комментария)'}
-                              </p>
-                            </div>
-                          </div>
+                          )}
                         </div>
                       ))
                     )}
