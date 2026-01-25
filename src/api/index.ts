@@ -329,6 +329,7 @@ interface ApiReportData {
   imageName: string;
   question: string;
   imageUrl: string;
+  projectName: string;
   annotations: ApiAnnotation[];
 }
 
@@ -349,6 +350,7 @@ export interface ReportData {
   imageHref: string;
   textContent: string;
   imageName: string;
+  projectName: string;
   annotations: ReportAnnotation[];
   submittedAt: string;
 }
@@ -382,6 +384,7 @@ export const reportApi = {
       imageHref: data.imageUrl,
       textContent: data.question,
       imageName: data.imageName,
+      projectName: data.projectName,
       annotations,
       submittedAt: latestTimestamp,
     };
