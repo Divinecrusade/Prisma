@@ -498,7 +498,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-secondary">
         <div className="text-center">
-          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Error</h1>
+          <h1 className="mb-2 text-2xl font-semibold text-gray-900">Ошибка</h1>
           <p className="mb-4 text-gray-600">{error}</p>
           <Button color="primary" size="md" onClick={() => window.location.reload()}>
             Retry
@@ -587,7 +587,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       <header className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex items-center justify-between">
           {/* Left: Link to admin */}
-            Панель управления
+          <h1 className="text-xl font-semibold text-gray-900">Панель управления</h1>
 
           {/* Center: Breadcrumbs */}
           <nav className="flex items-center gap-2 text-sm text-gray-600">
@@ -616,9 +616,9 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
           {/* Header */}
           <div className="flex items-center justify-between px-6 py-6">
             <div>
-              <h1 className="text-display-sm font-semibold text-primary">
+              <h2 className="text-display-sm font-semibold text-primary">
                 Отчёт - {reportData.imageName}
-              </h1>
+              </h2>
               <p className="mt-1 text-left text-text-sm text-gray-600">{reportData.textContent}</p>
             </div>
             <Button
