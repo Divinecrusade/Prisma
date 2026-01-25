@@ -578,7 +578,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
               onClick={() => setShowAnnotations(!showAnnotations)}
               iconLeading={showAnnotations ? Eye : EyeOff}
             >
-              {showAnnotations ? 'Скрыть' : 'Показать'} ответы
+              {showAnnotations ? 'Скрыть' : 'Показать'} тепловую карту
             </Button>
           </div>
 
@@ -645,10 +645,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                       <div className="mb-1 text-xs font-semibold">
                         Ответ #{reportData.annotations.findIndex(a => a.id === hoveredAnnotationData.id) + 1}
                       </div>
-                      <div className="text-xs">{hoveredAnnotationData.text || '(no comment)'}</div>
-                      <div className="mt-2 text-xs text-gray-300">
-                        ЛКМ - {selectedAnnotation === hoveredAnnotationData.id ? 'отменить выбор' : 'выбрать'}
-                      </div>
+                      <div className="text-xs">{hoveredAnnotationData.text || '(без комментария)'}</div>
                     </div>
                   )}
                 </div>
@@ -689,7 +686,7 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-text-sm text-gray-900">
-                                {annotation.text || '(no comment)'}
+                                {annotation.text || '(без комментария)'}
                               </p>
                             </div>
                           </div>

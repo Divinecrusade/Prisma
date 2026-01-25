@@ -237,7 +237,7 @@ const AdminPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-25 px-4 py-6 sm:px-6 lg:px-8">
       <header className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-7xl flex items-center justify-between">
+        <div className="mx-auto flex items-center justify-between">
           <h1 className="text-xl font-semibold text-gray-900">Панель управления</h1>
           <div className="flex items-center gap-4">
             {user && (
@@ -249,7 +249,6 @@ const AdminPage: React.FC = () => {
               onClick={handleLogout}
               iconLeading={LogOut}
             >
-              Выйти
             </Button>
           </div>
         </div>
@@ -281,7 +280,7 @@ const AdminPage: React.FC = () => {
                   <div className="flex items-center gap-3">
                     <h2 className="truncate text-text-lg font-semibold text-gray-900">{project.name}</h2>
                     {project.isHidden && (
-                      <span className="text-warning-500 inline-flex items-center rounded-full px-2.5 py-0.5 text-text-xs font-medium">
+                      <span className="text-warning-500 inline-flex items-center rounded-full px-2.5 text-text-xs font-medium">
                         Скрыто от пользователей
                       </span>
                     )}
@@ -299,7 +298,15 @@ const AdminPage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="ml-4 flex items-center gap-2">
+                <div className="ml-4 flex self-baseline gap-2">
+                  <Button
+                    color="secondary"
+                    size="sm"
+                    onClick={() => toggleProjectExpansion(project.id)}
+                    iconLeading={expandedProject === project.id ? ChevronUpIcon : ChevronDownIcon}
+                  >
+                    {expandedProject === project.id ? 'Свернуть' : 'Развернуть'}
+                  </Button>
                   <Button
                     color="secondary"
                     size="sm"
@@ -323,14 +330,6 @@ const AdminPage: React.FC = () => {
                     iconLeading={TrashIcon}
                   >
                     Удалить
-                  </Button>
-                  <Button
-                    color="secondary"
-                    size="sm"
-                    onClick={() => toggleProjectExpansion(project.id)}
-                    iconLeading={expandedProject === project.id ? ChevronUpIcon : ChevronDownIcon}
-                  >
-                    {expandedProject === project.id ? 'Свернуть' : 'Развернуть'}
                   </Button>
                 </div>
               </div>
@@ -416,19 +415,19 @@ const AdminPage: React.FC = () => {
                             <Button
                               color="secondary"
                               size="sm"
-                              onClick={() => copyReviewLink(image.id)}
-                              iconLeading={CopyIcon}
+                              onClick={() => gotoReport(image.id)}
                               className="flex-1"
                             >
-                              Скопировать ссылку на ревью
+                              Посмотреть отчёт
                             </Button>
                             <Button
                               color="secondary"
                               size="sm"
-                              onClick={() => gotoReport(image.id)}
+                              onClick={() => copyReviewLink(image.id)}
+                              iconLeading={CopyIcon}
                               className="flex-1"
                             >
-                              Отчёт
+                              Ссылка на ревью
                             </Button>
                           </div>
                         </div>

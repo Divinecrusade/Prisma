@@ -102,23 +102,23 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
     const newErrors: FormErrors = {};
     
     if (!name.trim()) {
-      newErrors.name = 'Image name is required';
+      newErrors.name = 'Подпись к изображению необходима';
     } else if (name.trim().length < 2) {
-      newErrors.name = 'Image name must be at least 2 characters';
+      newErrors.name = 'Подпись к изображению должна быть длиннее 1 символа';
     } else if (name.trim().length > 100) {
-      newErrors.name = 'Image name must be less than 100 characters';
+      newErrors.name = 'Подпись к изображению должна быть не длиннее 100 символов';
     }
 
     if (!question.trim()) {
-      newErrors.question = 'Question is required';
+      newErrors.question = 'Должен быть указан вопрос';
     } else if (question.trim().length < 10) {
-      newErrors.question = 'Question must be at least 10 characters';
+      newErrors.question = 'Вопрос должен быть длиннее 9 символов';
     } else if (question.trim().length > 500) {
-      newErrors.question = 'Question must be less than 500 characters';
+      newErrors.question = 'Вопрос должен быть не длиннее 500 символов';
     }
 
     if (!file) {
-      newErrors.file = 'Please select an image to upload';
+      newErrors.file = 'Пожалуйста, загрузите изображение';
     }
 
     setErrors(newErrors);
@@ -144,7 +144,7 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
       handleClose();
     } catch (error) {
       console.error('Failed to upload image:', error);
-      setErrors({ submit: 'Failed to upload image. Please try again.' });
+      setErrors({ submit: 'Не удалось загрузить изображение, пожалуйста, повторите попытку' });
     } finally {
       setIsSubmitting(false);
     }
@@ -209,7 +209,7 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Введите название, которое ассоцируется с тестом"
+                  placeholder="Например, тестирование главной"
                   className={`w-full rounded-lg border px-3.5 py-2.5 text-text-md text-gray-900 placeholder:text-gray-500 focus:outline-none focus:ring-2 ${
                     errors.name 
                       ? 'border-error-300 focus:border-error-300 focus:ring-error-100' 
@@ -288,10 +288,10 @@ const AddImageModal: React.FC<AddImageModalProps> = ({ isOpen, onClose, projectI
                         className="h-20 w-20 rounded-lg object-cover"
                       />
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-text-sm font-medium text-gray-900">
+                        <p className="truncate text-text-sm text-left font-medium text-gray-900">
                           {file?.name}
                         </p>
-                        <p className="text-text-xs text-gray-500">
+                        <p className="text-text-xs text-left text-gray-500">
                           {file && `${(file.size / 1024).toFixed(2)} KB`}
                         </p>
                       </div>

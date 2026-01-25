@@ -125,7 +125,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
 
               {/* Name field */}
               <div>
-                <label htmlFor="project-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
+                <label htmlFor="project-name" className="mb-1.5 text-left block text-text-sm font-medium text-gray-700">
                   Название папки <span className="text-error-500">*</span>
                 </label>
                 <input
@@ -147,7 +147,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
 
               {/* Description field */}
               <div>
-                <label htmlFor="project-description" className="mb-1.5 block text-text-sm font-medium text-gray-700">
+                <label htmlFor="project-description" className="text-left mb-1.5 block text-text-sm font-medium text-gray-700">
                   Описание <span className="text-error-500">*</span>
                 </label>
                 <textarea

@@ -69,11 +69,11 @@ const LoginPage: React.FC = () => {
       const result = await login(formData.email, formData.password);
       
       if (!result.success) {
-        setLoginError(result.message || 'Invalid email or password. Please check your credentials and try again.');
+        setLoginError(result.message || 'Неверный логин и/или пароль');
       }
       // If successful, the auth context will update and trigger redirect
     } catch {
-      setLoginError('An error occurred during login. Please try again later.');
+      setLoginError('Не удалось выполнить вход. Пожалуйста, повторите попытку позже.');
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +142,7 @@ const LoginPage: React.FC = () => {
               type="password"
               name="password"
               autoComplete="current-password"
-              placeholder="admin123"
+              placeholder="********"
               value={formData.password}
               onChange={(value) => handleInputChange('password', value)}
               isRequired
