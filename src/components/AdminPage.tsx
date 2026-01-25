@@ -20,6 +20,7 @@ import AddImageModal from './AddImageModal';
 import EditProjectModal from './EditProjectModal';
 import { projectsApi, imagesApi, type ResearchProject, type ResearchImage } from '../api';
 import { useAuth } from '../contexts/AuthContext';
+import ConfirmModal from './ConfirmModal';
 
 // Alias icons for backward compatibility
 const PlusIcon = Plus;
@@ -159,33 +160,40 @@ const AdminPage: React.FC = () => {
     }
   };
 
-  const deleteProject = async (projectId: string) => {
-    if (window.confirm('Are you sure you want to delete this project? This action cannot be undone.')) {
-      try {
-        await projectsApi.delete(projectId);
-        setProjects(prev => prev.filter(project => project.id !== projectId));
-      } catch (err) {
-        console.error('Failed to delete project:', err);
-      }
-    }
+  const [confirmModal, setConfirmModal] = useState<{
+    isOpen: boolean;
+    type: 'project' | 'image';
+    projectId: string;
+    imageId?: string;
+    itemName: string;
+  } | null>(null);
+
+  const deleteProject = (projectId: string, projectName: string) => {
+    setConfirmModal({ isOpen: true, type: 'project', projectId, itemName: projectName });
   };
 
-  const deleteImage = async (projectId: string, imageId: string) => {
-    if (window.confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
-      try {
-        await imagesApi.delete(imageId);
-        setProjects(prev => prev.map(project => 
-          project.id === projectId 
-            ? {
-                ...project,
-                images: project.images.filter(image => image.id !== imageId)
-              }
-            : project
+  const deleteImage = (projectId: string, imageId: string, imageName: string) => {
+    setConfirmModal({ isOpen: true, type: 'image', projectId, imageId, itemName: imageName });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!confirmModal) return;
+    try {
+      if (confirmModal.type === 'project') {
+        await projectsApi.delete(confirmModal.projectId);
+        setProjects(prev => prev.filter(p => p.id !== confirmModal.projectId));
+      } else if (confirmModal.imageId) {
+        await imagesApi.delete(confirmModal.imageId);
+        setProjects(prev => prev.map(p => 
+          p.id === confirmModal.projectId 
+            ? { ...p, images: p.images.filter(i => i.id !== confirmModal.imageId) }
+            : p
         ));
-      } catch (err) {
-        console.error('Failed to delete image:', err);
       }
+    } catch (err) {
+      console.error('Delete failed:', err);
     }
+    setConfirmModal(null);
   };
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -336,7 +344,7 @@ const AdminPage: React.FC = () => {
                   <Button
                     color="secondary-destructive"
                     size="sm"
-                    onClick={() => deleteProject(project.id)}
+                    onClick={() => deleteProject(project.id, 'папку ' + project.name)}
                     iconLeading={TrashIcon}
                   >
                     Удалить
@@ -402,7 +410,7 @@ const AdminPage: React.FC = () => {
                                 {image.isHidden ? <EyeOffIcon className="h-4 w-4" /> : <EyeIcon className="h-4 w-4" />}
                               </button>
                               <button
-                                onClick={() => deleteImage(project.id, image.id)}
+                                onClick={() => deleteImage(project.id, image.id, 'изображение ' + image.name)}
                                 className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-error-600"
                                 title="Удалить"
                               >
@@ -494,6 +502,13 @@ const AdminPage: React.FC = () => {
         {toastMessage}
       </div>
     )}
+
+    <ConfirmModal
+      isOpen={!!confirmModal}
+      onClose={() => setConfirmModal(null)}
+      onConfirm={handleConfirmDelete}
+      itemName={confirmModal?.itemName ?? ''}
+    />
     </div>
   );
 };
