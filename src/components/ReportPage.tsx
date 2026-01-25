@@ -725,7 +725,14 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
                             })}
                           >
                             <span className="font-medium text-gray-900">
-                              Сессия {sessionIndex + 1}
+                              Разметка {sessionIndex + 1} (      
+                                {new Date(sessionAnnotations[0].timestamp).toLocaleString('ru-RU', {
+                                  day: 'numeric',
+                                  month: 'numeric',
+                                  year: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })})
                             </span>
                             <ChevronDown className={`h-4 w-4 transition-transform ${
                               expandedSessions.has(sessionId) ? 'rotate-180' : ''
