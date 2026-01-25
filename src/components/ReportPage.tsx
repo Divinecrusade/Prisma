@@ -587,18 +587,18 @@ const ReportPage: React.FC<ReportPageProps> = ({ uniqueId }) => {
       <header className="bg-white border-b border-gray-200 px-4 py-4 sm:px-6 lg:px-8">
         <div className="mx-auto flex items-center justify-between">
           {/* Left: Link to admin */}
-          <button
-            onClick={() => navigate('/admin')}
-            className="text-xl font-semibold text-gray-900 hover:text-brand-600"
-          >
             Панель управления
-          </button>
 
           {/* Center: Breadcrumbs */}
           <nav className="flex items-center gap-2 text-sm text-gray-600">
             <Button color="tertiary" size="sm" onClick={() => navigate('/admin')} iconLeading={Home02} />
             <ChevronRight className="h-4 w-4 text-gray-400" />
-            <span className="text-gray-500">{reportData.projectName}</span>
+            <button
+              onClick={() => navigate(`/admin?currentProject=${reportData.projectId}`)}
+              className="font-medium text-gray-900 hover:text-brand-600 cursor-pointer"
+            >
+              <span className="text-gray-500">{reportData.projectName}</span>
+            </button>
             <ChevronRight className="h-4 w-4 text-gray-400" />
             <span className="font-medium to-brand-700">{reportData.imageName}</span>
           </nav>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from '@untitledui/base/buttons/button';
 import {
   Plus,
@@ -73,6 +73,16 @@ const AdminPage: React.FC = () => {
 
     fetchProjects();
   }, []);
+
+  const [searchParams] = useSearchParams();
+
+  // After projects are loaded, expand project from URL param
+  useEffect(() => {
+    const currentProject = searchParams.get('currentProject');
+    if (currentProject && projects.some(p => p.id === currentProject)) {
+      setExpandedProject(currentProject);
+    }
+  }, [projects, searchParams]);
 
   const openAddImageModal = (projectId: string, projectName: string) => {
     setAddImageModalState({ isOpen: true, projectId, projectName });
