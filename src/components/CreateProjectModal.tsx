@@ -118,7 +118,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               {/* Name field */}
               <div className="text-left">
                 <label htmlFor="project-name" className="mb-1.5 block text-text-sm font-medium text-gray-700">
-                  Project Name <span className="text-error-500">*</span>
+                  Название проекта <span className="text-error-500">*</span>
                 </label>
                 <input
                   id="project-name"

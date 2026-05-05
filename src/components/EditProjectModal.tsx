@@ -38,11 +38,11 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ isOpen, onClose, pr
     const newErrors: FormErrors = {};
     
     if (!name.trim()) {
-      newErrors.name = 'Project name is required';
+      newErrors.name = 'Требуется название проекта';
     } else if (name.trim().length < 3) {
-      newErrors.name = 'Project name must be at least 3 characters';
+      newErrors.name = 'Название проекта должно быть не короче 3 символов';
     } else if (name.trim().length > 100) {
-      newErrors.name = 'Project name must be less than 100 characters';
+      newErrors.name = 'Название проекта должно быть не длиннее 100 символов';
     }
 
     if (!description.trim()) {
